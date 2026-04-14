@@ -44,7 +44,7 @@ ResearchBot is a web platform where anyone describes in natural language what th
 | PDF Export | None for MVP | User can print-to-PDF from browser |
 | Credits | Balance = SUM(transactions) | No mutable balance field, transactions are source of truth |
 | Chat | One chat per project | Bounded context, simpler history management |
-| LLM — Chatbot | GPT-4o-mini (via @ai-sdk/openai) | Only selects tools + configures params, doesn't need expensive model. ~$0.001/conversation |
+| LLM — Chatbot | Claude Haiku 4.5 (via @ai-sdk/anthropic) | Only selects tools + configures params. Single API key for all LLM usage. ~$0.005/conversation |
 | LLM — Reports | Claude Sonnet 4.6 (via @ai-sdk/anthropic) | Report quality matters — needs strong reasoning for insights and HTML generation |
 | LLM — Analysis | Claude Haiku 4.5 (Batch API) | Cheap, accurate in Spanish, 50% off with Batch API |
 | Tool Calling UX | Semi-transparent indicators | Shows "Searching tools..." etc. while tools run |
@@ -62,8 +62,8 @@ ResearchBot is a web platform where anyone describes in natural language what th
 | Framework | Next.js 15 (App Router, TypeScript) | Frontend + API + SSR in one project |
 | UI | Tailwind CSS + shadcn/ui | High-quality components, responsive out-of-box |
 | Database + Auth + Realtime + Storage | Supabase (PostgreSQL) | Generous free tier, auth included, realtime included |
-| Chatbot | Vercel AI SDK (@ai-sdk/openai) | Native streaming, tool calling, designed for Next.js |
-| LLM — Chatbot | GPT-4o-mini ($0.15/$0.60 per MTok) | Tool selection + config only, excellent tool calling, near-free |
+| Chatbot | Vercel AI SDK (@ai-sdk/anthropic) | Native streaming, tool calling, designed for Next.js |
+| LLM — Chatbot | Claude Haiku 4.5 ($1/$5 per MTok) | Tool selection + config only. Single Anthropic API key for all LLM usage |
 | LLM — Reports | Claude Sonnet 4.6 ($3/$15 per MTok) | High-quality HTML report generation with insights |
 | LLM — Analysis | Claude Haiku 4.5 (Batch API, $0.50/$2.50 per MTok) | Cheap, accurate in Spanish, 50% off with Batch API |
 | Scraping | Apify (curated catalog) | API REST, handles proxies/CAPTCHAs/retries |
@@ -94,7 +94,7 @@ ResearchBot is a web platform where anyone describes in natural language what th
     │Supabase │    │  LLM APIs  │    │   Inngest   │
     │ - Auth  │    │            │    │  (jobs +    │
     │ - DB    │    │ OpenAI     │    │   cron)     │
-    │ - Realtime│  │  GPT-4o-mini│   │             │
+    │ - Realtime│  │  Claude Haiku 4.5│   │             │
     │ - Storage│   │  (chatbot) │    └──────┬──────┘
     └─────────┘    │            │           │
                    │ Anthropic  │    ┌──────▼──────┐
@@ -107,7 +107,7 @@ ResearchBot is a web platform where anyone describes in natural language what th
 
 ### Data Flow
 
-1. User talks to chatbot → API route `/api/chat` → GPT-4o-mini with tool calling
+1. User talks to chatbot → API route `/api/chat` → Claude Haiku 4.5 with tool calling
 2. Claude calls tools (searchTools, estimateCost, etc.) → resolves against static catalog + DB health
 3. User confirms → API route fires Inngest event
 4. Inngest runs scraping (Apify API) → polling → saves data to Supabase
@@ -305,7 +305,7 @@ CREATE INDEX idx_transactions_project ON transactions(project_id);
 
 ## 6. Chatbot Architecture
 
-**Model: GPT-4o-mini** via `@ai-sdk/openai`. The chatbot's only job is tool selection, parameter configuration, keyword suggestion, and cost estimation. It does NOT generate reports or analyze data — those use Claude Sonnet 4.6 and Haiku 4.5 respectively.
+**Model: Claude Haiku 4.5** via `@ai-sdk/anthropic`. The chatbot's only job is tool selection, parameter configuration, keyword suggestion, and cost estimation. It does NOT generate reports or analyze data — those use Claude Sonnet 4.6 and Haiku 4.5 respectively.
 
 ### System Prompt
 
@@ -759,7 +759,7 @@ src/
 │   │   ├── catalog.ts                  # static tool catalog definition
 │   │   └── validator.ts               # post-scraping validation
 │   ├── ai/
-│   │   ├── chat-tools.ts              # 6 tool definitions (Zod schemas) — GPT-4o-mini
+│   │   ├── chat-tools.ts              # 6 tool definitions (Zod schemas) — Claude Haiku 4.5
 │   │   ├── system-prompt.ts           # system prompt builder per locale
 │   │   ├── enrichment.ts              # batch analysis prompt builder — Haiku 4.5
 │   │   └── report-generator.ts        # report prompt builder — Sonnet 4.6
@@ -836,7 +836,7 @@ src/
 
 | Component | Typical Cost |
 |---|---|
-| Chat conversation (GPT-4o-mini) | ~$0.001-0.005 |
+| Chat conversation (Claude Haiku 4.5) | ~$0.005-0.02 |
 | Scraping (Apify, varies by tool) | ~$1-10 |
 | AI analysis (Haiku 4.5 Batch) | ~$0.05 per 1000 records |
 | Report generation (Sonnet 4.6) | ~$0.03-0.08 |
