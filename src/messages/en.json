@@ -1,0 +1,48 @@
+{
+  "common": {
+    "appName": "ResearchBot",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "back": "Back"
+  },
+  "auth": {
+    "login": "Log in",
+    "signup": "Sign up",
+    "logout": "Log out",
+    "email": "Email",
+    "password": "Password",
+    "continueWithGoogle": "Continue with Google",
+    "orContinueWith": "Or continue with",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?"
+  },
+  "dashboard": {
+    "title": "My Research",
+    "newResearch": "New Research",
+    "recentProjects": "Recent Projects",
+    "emptyState": "Start a new research",
+    "emptyStateDescription": "Describe what you want to investigate and I'll guide you through the process"
+  },
+  "project": {
+    "chat": "Chat",
+    "data": "Data",
+    "report": "Report",
+    "status": {
+      "draft": "Draft",
+      "configured": "Configured",
+      "running": "Running",
+      "completed": "Completed",
+      "failed": "Failed"
+    }
+  },
+  "billing": {
+    "credits": "Credits",
+    "balance": "Available Credits",
+    "buyCredits": "Buy Credits",
+    "transactionHistory": "Transaction History",
+    "estimateNote": "~{count} research projects"
+  }
+}

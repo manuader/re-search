@@ -1,0 +1,48 @@
+{
+  "common": {
+    "appName": "ResearchBot",
+    "loading": "Cargando...",
+    "error": "Algo salio mal",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "back": "Volver"
+  },
+  "auth": {
+    "login": "Iniciar sesion",
+    "signup": "Registrarse",
+    "logout": "Cerrar sesion",
+    "email": "Email",
+    "password": "Contrasena",
+    "continueWithGoogle": "Continuar con Google",
+    "orContinueWith": "O continuar con",
+    "noAccount": "No tenes cuenta?",
+    "hasAccount": "Ya tenes cuenta?"
+  },
+  "dashboard": {
+    "title": "Mis Investigaciones",
+    "newResearch": "Nueva Investigacion",
+    "recentProjects": "Proyectos Recientes",
+    "emptyState": "Empeza una nueva investigacion",
+    "emptyStateDescription": "Describi que queres investigar y te guio en el proceso"
+  },
+  "project": {
+    "chat": "Chat",
+    "data": "Datos",
+    "report": "Reporte",
+    "status": {
+      "draft": "Borrador",
+      "configured": "Configurado",
+      "running": "Ejecutando",
+      "completed": "Completado",
+      "failed": "Fallido"
+    }
+  },
+  "billing": {
+    "credits": "Creditos",
+    "balance": "Creditos Disponibles",
+    "buyCredits": "Comprar Creditos",
+    "transactionHistory": "Historial de Transacciones",
+    "estimateNote": "~{count} investigaciones"
+  }
+}
