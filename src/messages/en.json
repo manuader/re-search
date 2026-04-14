@@ -43,6 +43,19 @@
     "balance": "Available Credits",
     "buyCredits": "Buy Credits",
     "transactionHistory": "Transaction History",
-    "estimateNote": "~{count} research projects"
+    "estimateNote": "~{count} research projects",
+    "title": "Billing",
+    "paymentSuccess": "Payment successful! Credits added.",
+    "paymentFailure": "Payment failed. Please try again.",
+    "paymentPending": "Payment pending. Credits will be added once confirmed.",
+    "customAmount": "Custom amount",
+    "minAmount": "Minimum $5",
+    "transactionTypes": {
+      "credit_purchase": "Credit Purchase",
+      "scraping_reserve": "Research Reserve",
+      "scraping_cost": "Research Cost Adjustment",
+      "ai_cost": "AI Analysis Cost",
+      "refund": "Refund"
+    }
   }
 }

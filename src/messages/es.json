@@ -43,6 +43,19 @@
     "balance": "Creditos Disponibles",
     "buyCredits": "Comprar Creditos",
     "transactionHistory": "Historial de Transacciones",
-    "estimateNote": "~{count} investigaciones"
+    "estimateNote": "~{count} investigaciones",
+    "title": "Facturacion",
+    "paymentSuccess": "Pago exitoso! Creditos acreditados.",
+    "paymentFailure": "El pago fallo. Por favor intenta de nuevo.",
+    "paymentPending": "Pago pendiente. Los creditos se acreditaran una vez confirmado.",
+    "customAmount": "Monto personalizado",
+    "minAmount": "Minimo $5",
+    "transactionTypes": {
+      "credit_purchase": "Compra de Creditos",
+      "scraping_reserve": "Reserva de Investigacion",
+      "scraping_cost": "Ajuste de Costo de Investigacion",
+      "ai_cost": "Costo de Analisis IA",
+      "refund": "Reembolso"
+    }
   }
 }
