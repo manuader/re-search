@@ -10,6 +10,8 @@ import {
 } from "@/lib/apify/client";
 import { validateScrapedData } from "@/lib/apify/validator";
 import { findToolById } from "@/lib/apify/catalog";
+import { submitBatchAnalysis } from "@/lib/ai/enrichment";
+import type { AnalysisType, AnalysisConfig } from "@/lib/ai/enrichment";
 
 // ---------------------------------------------------------------------------
 // Event type
@@ -271,32 +273,91 @@ export const executeResearch = inngest.createFunction(
         .eq("id", projectId);
     });
 
-    // ── Step: complete ──────────────────────────────────────────────
-    await step.run("complete", async () => {
-      // Check if AI analysis configs exist (Phase 4 will handle these)
-      const { data: analysisConfigs } = await supabase
+    // ── Step: check-ai-analysis ─────────────────────────────────────
+    const analysisConfigs = await step.run("check-ai-analysis", async () => {
+      const { data, error } = await supabase
         .from("ai_analysis_configs")
-        .select("id")
+        .select("id, analysis_type, config")
         .eq("project_id", projectId)
-        .limit(1);
+        .eq("status", "pending");
 
-      if (analysisConfigs && analysisConfigs.length > 0) {
-        // Phase 4: AI analysis will be triggered here
-        // For now, just mark the project as completed
-        console.log(
-          `Project ${projectId} has ${analysisConfigs.length} AI analysis config(s) — skipping for now (Phase 4)`
-        );
+      if (error) {
+        console.error("Failed to fetch AI analysis configs:", error.message);
+        return [];
       }
 
-      await supabase
-        .from("research_projects")
-        .update({
-          status: "completed",
-          completed_at: new Date().toISOString(),
-        })
-        .eq("id", projectId);
+      return data ?? [];
     });
 
-    return { projectId, status: "completed" };
+    if (analysisConfigs.length === 0) {
+      // No AI analysis configured — mark project as completed now
+      await step.run("complete", async () => {
+        await supabase
+          .from("research_projects")
+          .update({
+            status: "completed",
+            completed_at: new Date().toISOString(),
+          })
+          .eq("id", projectId);
+      });
+
+      return { projectId, status: "completed" };
+    }
+
+    // ── Step: fetch-raw-data-for-ai ──────────────────────────────────
+    const rawDataItems = await step.run("fetch-raw-data-for-ai", async () => {
+      const { data, error } = await supabase
+        .from("raw_data")
+        .select("id, content")
+        .eq("project_id", projectId);
+
+      if (error) {
+        throw new NonRetriableError(`Failed to fetch raw data: ${error.message}`);
+      }
+
+      return (data ?? []) as { id: string; content: Record<string, unknown> }[];
+    });
+
+    // ── Submit one batch per AI analysis config ──────────────────────
+    for (const config of analysisConfigs) {
+      await step.run(`submit-batch-${config.id}`, async () => {
+        const batchId = await submitBatchAnalysis(
+          config.id,
+          projectId,
+          rawDataItems,
+          config.analysis_type as AnalysisType,
+          config.config as AnalysisConfig
+        );
+
+        // Mark config as processing and save the batch ID
+        const { error: updateError } = await supabase
+          .from("ai_analysis_configs")
+          .update({
+            status: "processing",
+            batch_id: batchId,
+          })
+          .eq("id", config.id);
+
+        if (updateError) {
+          console.error(
+            `Failed to update analysis config ${config.id}:`,
+            updateError.message
+          );
+        }
+
+        // Dispatch the process-batch event so the dedicated function polls it
+        await inngest.send({
+          name: "research/process-batch",
+          data: {
+            projectId,
+            analysisConfigId: config.id,
+            batchId,
+          },
+        });
+      });
+    }
+
+    // process-batch will mark the project completed once all configs are done
+    return { projectId, status: "ai-analysis-submitted" };
   }
 );
