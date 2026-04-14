@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ChatInterface } from "@/components/chat/chat-interface";
+import { ProgressTracker } from "@/components/project/progress-tracker";
 import type { Locale } from "@/types";
 
 export default async function ProjectPage({
@@ -27,12 +28,19 @@ export default async function ProjectPage({
   }
 
   return (
-    <div className="flex h-full">
-      <ChatInterface
-        projectId={id}
-        locale={locale as Locale}
-        projectStatus={project.status}
-      />
+    <div className="flex h-full flex-col">
+      {["running", "completed", "failed"].includes(project.status) && (
+        <div className="border-b p-4">
+          <ProgressTracker projectId={id} />
+        </div>
+      )}
+      <div className="flex-1">
+        <ChatInterface
+          projectId={id}
+          locale={locale as Locale}
+          projectStatus={project.status}
+        />
+      </div>
     </div>
   );
 }
