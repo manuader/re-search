@@ -8,6 +8,7 @@ import {
   findToolById,
 } from "@/lib/apify/catalog";
 import { createClient } from "@/lib/supabase/server";
+import { inngest } from "@/lib/inngest/client";
 
 const errorMessages: Record<Locale, Record<string, string>> = {
   en: {
@@ -251,7 +252,7 @@ export function createChatTools(
             .from("projects")
             .update({
               title,
-              status: "configured",
+              status: "running",
               updated_at: new Date().toISOString(),
             })
             .eq("id", projectId)
@@ -311,17 +312,32 @@ export function createChatTools(
             return { error: errorMessages[locale].generic };
           }
 
-          // NOTE: Inngest dispatch is not implemented yet (Phase 3)
-          // Jobs are created with status "pending" and will be picked up
-          // once the Inngest integration is in place.
+          // Dispatch Inngest event to start scraping pipeline
+          await inngest.send({
+            name: "research/execute",
+            data: { projectId },
+          });
+
+          // Update project status to 'running'
+          await supabase
+            .from("research_projects")
+            .update({ status: "running" })
+            .eq("id", projectId);
+
+          const costFormatted = totalCost.toFixed(2);
+          const successMessage =
+            locale === "es"
+              ? `Investigacion iniciada! Costo estimado: $${costFormatted}. Podes seguir el progreso en tiempo real.`
+              : `Research started! Estimated cost: $${costFormatted}. You can track progress in real time.`;
 
           return {
             success: true,
             projectId,
-            status: "configured",
+            status: "running",
             jobsCreated: tools.length,
             totalEstimatedCost: totalCost,
             creditBalance: balance - totalCost,
+            message: successMessage,
           };
         } catch {
           return { error: errorMessages[locale].generic };
