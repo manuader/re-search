@@ -1,0 +1,76 @@
+const APIFY_BASE_URL = "https://api.apify.com/v2";
+const APIFY_TOKEN = process.env.APIFY_API_TOKEN!;
+
+export interface ApifyRunResult {
+  id: string;
+  status: string;
+  defaultDatasetId: string;
+  stats?: {
+    inputBodyLen?: number;
+    restartCount?: number;
+  };
+  usage?: {
+    USD?: number;
+  };
+}
+
+export async function startActorRun(
+  actorId: string,
+  input: Record<string, unknown>
+): Promise<ApifyRunResult> {
+  const res = await fetch(
+    `${APIFY_BASE_URL}/acts/${actorId}/runs?token=${APIFY_TOKEN}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    }
+  );
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Apify start failed (${res.status}): ${text}`);
+  }
+
+  const data = await res.json();
+  return data.data;
+}
+
+export async function getRunStatus(runId: string): Promise<ApifyRunResult> {
+  const res = await fetch(
+    `${APIFY_BASE_URL}/actor-runs/${runId}?token=${APIFY_TOKEN}`
+  );
+
+  if (!res.ok) {
+    throw new Error(`Apify status check failed (${res.status})`);
+  }
+
+  const data = await res.json();
+  return data.data;
+}
+
+export async function getDatasetItems(
+  datasetId: string,
+  limit?: number
+): Promise<unknown[]> {
+  const params = new URLSearchParams({ token: APIFY_TOKEN });
+  if (limit) params.set("limit", String(limit));
+
+  const res = await fetch(
+    `${APIFY_BASE_URL}/datasets/${datasetId}/items?${params}`
+  );
+
+  if (!res.ok) {
+    throw new Error(`Apify dataset download failed (${res.status})`);
+  }
+
+  return res.json();
+}
+
+export function isRunFinished(status: string): boolean {
+  return ["SUCCEEDED", "FAILED", "TIMED-OUT", "ABORTED"].includes(status);
+}
+
+export function isRunSucceeded(status: string): boolean {
+  return status === "SUCCEEDED";
+}
