@@ -235,7 +235,7 @@ export const executeResearch = inngest.createFunction(
 
       // Fetch the scraping_reserve transaction to get the reserved amount
       const { data: reserveTx } = await supabase
-        .from("credit_transactions")
+        .from("transactions")
         .select("amount")
         .eq("project_id", projectId)
         .eq("type", "scraping_reserve")
@@ -249,7 +249,7 @@ export const executeResearch = inngest.createFunction(
 
         if (difference < 0) {
           // Refund: user was overcharged in reserve
-          await supabase.from("credit_transactions").insert({
+          await supabase.from("transactions").insert({
             project_id: projectId,
             type: "scraping_adjustment",
             amount: Math.abs(difference), // positive = refund
@@ -257,7 +257,7 @@ export const executeResearch = inngest.createFunction(
           });
         } else if (difference > 0) {
           // Charge extra: actual cost exceeded reserve
-          await supabase.from("credit_transactions").insert({
+          await supabase.from("transactions").insert({
             project_id: projectId,
             type: "scraping_adjustment",
             amount: -difference, // negative = charge

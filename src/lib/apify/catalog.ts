@@ -1215,7 +1215,7 @@ export const toolCatalog: ToolCatalogEntry[] = [
   // ─── 12. LinkedIn Profiles ────────────────────────────────────────────
   {
     id: "linkedin-profiles",
-    actorId: "dev_fusion/Linkedin-Profile-Scraper",
+    actorId: "dev_fusion/linkedin-profile-scraper",
     name: {
       en: "LinkedIn Profile Scraper",
       es: "Extractor de Perfiles de LinkedIn",

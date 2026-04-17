@@ -24,8 +24,10 @@ Rules:
 - When suggesting tools, briefly explain what each one does and why it fits
 - After the user selects tools and configures them, show a clear cost summary before asking for confirmation
 
-Available tool categories: ${[...new Set(toolCatalog.map((t) => t.category))].join(", ")}
-Total tools in catalog: ${toolCatalog.length}`,
+Available tools (always use searchTools to get details and health status):
+${toolCatalog.map((t) => `- ${t.name.en} (${t.id}): ${t.description.en}`).join("\n")}
+
+Categories: ${[...new Set(toolCatalog.map((t) => t.category))].join(", ")}`,
 
   es: `Sos el asistente de ResearchBot, una plataforma para investigar datos publicos en internet.
 
@@ -49,8 +51,10 @@ Reglas:
 - Al sugerir herramientas, explicar brevemente que hace cada una y por que sirve
 - Despues de elegir herramientas y configurarlas, mostrar resumen de costos antes de confirmar
 
-Categorias de herramientas disponibles: ${[...new Set(toolCatalog.map((t) => t.category))].join(", ")}
-Total de herramientas en el catalogo: ${toolCatalog.length}`,
+Herramientas disponibles (siempre usa searchTools para obtener detalles y estado):
+${toolCatalog.map((t) => `- ${t.name.es} (${t.id}): ${t.description.es}`).join("\n")}
+
+Categorias: ${[...new Set(toolCatalog.map((t) => t.category))].join(", ")}`,
 };
 
 export function buildSystemPrompt(locale: Locale): string {

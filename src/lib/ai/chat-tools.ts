@@ -249,11 +249,10 @@ export function createChatTools(
 
           // 2. Update project with title and status
           const { error: projectError } = await supabase
-            .from("projects")
+            .from("research_projects")
             .update({
               title,
               status: "running",
-              updated_at: new Date().toISOString(),
             })
             .eq("id", projectId)
             .eq("user_id", userId);
@@ -299,7 +298,7 @@ export function createChatTools(
 
           // 5. Reserve credits via negative transaction
           const { error: txError } = await supabase
-            .from("credit_transactions")
+            .from("transactions")
             .insert({
               user_id: userId,
               amount: -totalCost,

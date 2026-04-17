@@ -10,6 +10,7 @@ import { ChatInput } from "./chat-input";
 import { CostCard } from "./cost-card";
 
 interface SelectedTool {
+  toolId: string;
   name: string;
   healthStatus: string;
   estimatedResults: number;
@@ -39,39 +40,75 @@ export function ChatInterface({
     }),
     messages: initialMessages,
     onFinish: ({ message }) => {
-      // Extract cost/tool data from tool parts when the assistant finishes
-      const tools: SelectedTool[] = [];
-      let cost = 0;
+      // Extract tool and cost data from tool parts
+      const newTools: SelectedTool[] = [];
+      const costUpdates: { toolId: string; cost: number; resultCount: number }[] = [];
 
       for (const part of message.parts) {
         if (part.type === "text") continue;
-        if ("state" in part && part.state === "output-available" && "output" in part) {
-          const output = part.output as Record<string, unknown>;
-          // Handle estimateCost tool output
-          if (output && typeof output === "object" && "expected" in output) {
-            cost += (output.expected as number) ?? 0;
-          }
-          // Handle searchTools output for selected tools
-          if (output && typeof output === "object" && "results" in output) {
-            const results = output.results;
-            if (Array.isArray(results)) {
-              for (const r of results) {
-                if (r && typeof r === "object" && "name" in r) {
-                  tools.push({
-                    name: String(r.name),
-                    healthStatus: String(r.healthStatus ?? "unknown"),
-                    estimatedResults: 0,
-                    cost: 0,
-                  });
-                }
-              }
+        if (!("state" in part) || part.state !== "output-available" || !("output" in part)) continue;
+
+        const output = part.output as Record<string, unknown>;
+        if (!output || typeof output !== "object") continue;
+
+        // searchTools returns an array directly (not wrapped in "results")
+        if (Array.isArray(output)) {
+          for (const r of output) {
+            if (r && typeof r === "object" && "name" in r && "id" in r) {
+              newTools.push({
+                toolId: String((r as Record<string, unknown>).id),
+                name: String((r as Record<string, unknown>).name),
+                healthStatus: String((r as Record<string, unknown>).healthStatus ?? "unknown"),
+                estimatedResults: 0,
+                cost: 0,
+              });
             }
+          }
+        }
+
+        // estimateCost returns { expected, min, max, breakdown }
+        if ("expected" in output && "breakdown" in output) {
+          const breakdown = String(output.breakdown ?? "");
+          // Extract toolId from the input of this tool call
+          const input = "input" in part ? (part.input as Record<string, unknown>) : null;
+          const toolId = input ? String(input.toolId ?? "") : "";
+          const resultCount = input ? Number(input.resultCount ?? 0) : 0;
+
+          if (toolId) {
+            costUpdates.push({
+              toolId,
+              cost: Number(output.expected ?? 0),
+              resultCount,
+            });
           }
         }
       }
 
-      if (tools.length > 0) setSelectedTools(tools);
-      if (cost > 0) setTotalCost(cost);
+      // Merge: add new tools, then apply cost updates
+      setSelectedTools((prev) => {
+        let merged = [...prev];
+        // Add new tools (avoid duplicates)
+        for (const t of newTools) {
+          if (!merged.some((m) => m.toolId === t.toolId)) {
+            merged.push(t);
+          }
+        }
+        // Apply cost updates to matching tools
+        for (const update of costUpdates) {
+          merged = merged.map((t) =>
+            t.toolId === update.toolId
+              ? { ...t, cost: update.cost, estimatedResults: update.resultCount }
+              : t
+          );
+        }
+        return merged;
+      });
+
+      // Update total cost
+      const newCostTotal = costUpdates.reduce((sum, u) => sum + u.cost, 0);
+      if (newCostTotal > 0) {
+        setTotalCost((prev) => prev + newCostTotal);
+      }
     },
   });
 

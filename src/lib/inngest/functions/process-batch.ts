@@ -254,7 +254,7 @@ export const processBatch = inngest.createFunction(
       // Insert transaction for AI cost (negative amount = charge)
       if (totalAiCost > 0) {
         const { error: txError } = await supabase
-          .from("credit_transactions")
+          .from("transactions")
           .insert({
             user_id: project.user_id,
             project_id: projectId,

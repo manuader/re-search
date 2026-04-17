@@ -27,6 +27,19 @@ export default async function ProjectPage({
     redirect(`/${locale}`);
   }
 
+  // Load chat messages and convert to UIMessage format
+  const { data: dbMessages } = await supabase
+    .from("chat_messages")
+    .select("id, role, content, created_at")
+    .eq("project_id", id)
+    .order("created_at", { ascending: true });
+
+  const initialMessages = (dbMessages ?? []).map((m: { id: string; role: string; content: string }) => ({
+    id: m.id,
+    role: m.role as "user" | "assistant",
+    parts: [{ type: "text" as const, text: m.content }],
+  }));
+
   return (
     <div className="flex h-full flex-col">
       {["running", "completed", "failed"].includes(project.status) && (
@@ -39,6 +52,7 @@ export default async function ProjectPage({
           projectId={id}
           locale={locale as Locale}
           projectStatus={project.status}
+          initialMessages={initialMessages}
         />
       </div>
     </div>

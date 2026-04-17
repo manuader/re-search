@@ -40,6 +40,23 @@ export async function POST(req: Request) {
     return new Response("Not found", { status: 404 });
   }
 
+  // Save the user's latest message to DB (last message in array is the new one)
+  const lastMessage = messages[messages.length - 1];
+  if (lastMessage && lastMessage.role === "user") {
+    const textContent = lastMessage.parts
+      ?.filter((p: { type: string }) => p.type === "text")
+      .map((p: { type: string; text?: string }) => p.text ?? "")
+      .join("") || "";
+
+    if (textContent) {
+      await supabase.from("chat_messages").insert({
+        project_id: projectId,
+        role: "user",
+        content: textContent,
+      });
+    }
+  }
+
   const tools = createChatTools(locale as Locale, projectId, user.id);
 
   const result = streamText({
@@ -48,6 +65,16 @@ export async function POST(req: Request) {
     messages: await convertToModelMessages(messages),
     tools,
     stopWhen: stepCountIs(5),
+    onFinish: async ({ text }) => {
+      // Save assistant response to DB
+      if (text) {
+        await supabase.from("chat_messages").insert({
+          project_id: projectId,
+          role: "assistant",
+          content: text,
+        });
+      }
+    },
   });
 
   return result.toUIMessageStreamResponse();

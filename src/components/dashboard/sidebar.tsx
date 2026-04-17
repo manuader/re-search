@@ -1,10 +1,20 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { createClient } from "@/lib/supabase/client";
 
 interface Project {
   id: string;
@@ -16,6 +26,7 @@ interface Project {
 interface SidebarProps {
   creditBalance: number;
   projects: Project[];
+  userEmail: string;
 }
 
 const STATUS_EMOJI: Record<string, string> = {
@@ -26,10 +37,26 @@ const STATUS_EMOJI: Record<string, string> = {
   failed: "❌",
 };
 
-export function Sidebar({ creditBalance, projects }: SidebarProps) {
+export function Sidebar({ creditBalance, projects, userEmail }: SidebarProps) {
   const t = useTranslations();
   const locale = useLocale();
   const router = useRouter();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+
+  async function handleRename(projectId: string) {
+    if (!editTitle.trim()) {
+      setEditingId(null);
+      return;
+    }
+    await fetch(`/api/projects/${projectId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: editTitle.trim() }),
+    });
+    setEditingId(null);
+    router.refresh();
+  }
 
   async function handleNewResearch() {
     const res = await fetch("/api/projects", {
@@ -63,26 +90,68 @@ export function Sidebar({ creditBalance, projects }: SidebarProps) {
 
       <div className="flex-1 overflow-y-auto space-y-1">
         {projects.map((project) => (
-          <Link
-            key={project.id}
-            href={`/${locale}/projects/${project.id}`}
-            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors truncate"
-          >
+          <div key={project.id} className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors">
             <span className="shrink-0">
               {STATUS_EMOJI[project.status] ?? "📝"}
             </span>
-            <span className="truncate">{project.title}</span>
-          </Link>
+            {editingId === project.id ? (
+              <Input
+                autoFocus
+                className="h-6 text-sm px-1"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                onBlur={() => handleRename(project.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleRename(project.id);
+                  if (e.key === "Escape") setEditingId(null);
+                }}
+              />
+            ) : (
+              <Link
+                href={`/${locale}/projects/${project.id}`}
+                className="truncate flex-1"
+                onDoubleClick={(e) => {
+                  e.preventDefault();
+                  setEditingId(project.id);
+                  setEditTitle(project.title);
+                }}
+              >
+                {project.title}
+              </Link>
+            )}
+          </div>
         ))}
       </div>
 
       <Separator className="my-2" />
 
-      <div className="space-y-1 px-2 text-sm">
-        <div className="text-muted-foreground">
-          {t("billing.credits")}: ${creditBalance.toFixed(2)}
-        </div>
+      <div className="px-2 text-xs text-muted-foreground mb-2">
+        {t("billing.credits")}: ${creditBalance.toFixed(2)}
       </div>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-muted transition-colors">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">
+            {userEmail.charAt(0).toUpperCase()}
+          </div>
+          <span className="truncate text-muted-foreground">{userEmail}</span>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" side="top" className="w-56">
+          <DropdownMenuItem onClick={() => router.push(`/${locale}/billing`)}>
+            {t("billing.credits")}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={async () => {
+              const supabase = createClient();
+              await supabase.auth.signOut();
+              router.push(`/${locale}/login`);
+            }}
+          >
+            {t("auth.logout")}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </aside>
   );
 }
