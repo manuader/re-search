@@ -17,7 +17,7 @@ export function MessageList({ messages }: MessageListProps) {
   }, [messages]);
 
   return (
-    <ScrollArea className="flex-1">
+    <ScrollArea className="flex-1 h-0 min-h-0">
       <div className="flex flex-col gap-4 p-4">
         {messages.map((message) => (
           <MessageBubble key={message.id} message={message} />
