@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from "react";
 import type { UIMessage } from "ai";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageBubble } from "./message-bubble";
 
 interface MessageListProps {
@@ -11,20 +10,22 @@ interface MessageListProps {
 }
 
 export function MessageList({ messages, onKeywordSelectionChange }: MessageListProps) {
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = containerRef.current;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+    }
   }, [messages]);
 
   return (
-    <ScrollArea className="flex-1 h-0 min-h-0">
+    <div ref={containerRef} className="flex-1 overflow-y-auto">
       <div className="flex flex-col gap-4 p-4">
         {messages.map((message) => (
           <MessageBubble key={message.id} message={message} onKeywordSelectionChange={onKeywordSelectionChange} />
         ))}
-        <div ref={bottomRef} />
       </div>
-    </ScrollArea>
+    </div>
   );
 }

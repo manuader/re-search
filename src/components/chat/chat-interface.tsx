@@ -158,9 +158,9 @@ export function ChatInterface({
   }
 
   return (
-    <div className="flex h-full flex-col gap-4 lg:flex-row">
+    <div className="flex h-full min-h-0 flex-col gap-4 lg:flex-row">
       {/* Chat area */}
-      <div className="flex flex-1 flex-col rounded-xl border bg-card">
+      <div className="flex flex-1 flex-col min-h-0 rounded-xl border bg-card">
         <MessageList messages={messages} onKeywordSelectionChange={handleKeywordSelectionChange} />
         <ChatInput onSend={handleSend} disabled={isDisabled} />
       </div>
