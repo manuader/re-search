@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Card,
   CardHeader,
@@ -8,6 +9,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
 interface SelectedTool {
@@ -18,15 +20,11 @@ interface SelectedTool {
   cost: number;
 }
 
-interface AIAnalysisConfig {
-  type: string;
-  description?: string;
-}
-
 interface CostCardProps {
   tools: SelectedTool[];
   totalCost: number;
-  aiAnalysis?: AIAnalysisConfig[];
+  onStartResearch?: () => void;
+  disabled?: boolean;
 }
 
 function healthBadgeVariant(status: string) {
@@ -42,53 +40,72 @@ function healthBadgeVariant(status: string) {
   }
 }
 
-export function CostCard({ tools, totalCost, aiAnalysis }: CostCardProps) {
-  if (tools.length === 0) return null;
+export function CostCard({ tools, totalCost, onStartResearch, disabled }: CostCardProps) {
+  const [starting, setStarting] = useState(false);
+
+  if (tools.length === 0) {
+    return (
+      <Card className="border-dashed">
+        <CardContent className="flex items-center justify-center py-8">
+          <p className="text-sm text-muted-foreground text-center">
+            Describe your research goal and I&apos;ll suggest tools with cost estimates
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const hasEstimates = tools.some((t) => t.cost > 0);
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Research Summary</CardTitle>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Research Summary</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         {tools.map((tool, i) => (
           <div key={i} className="flex flex-col gap-1">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">{tool.name}</span>
-              <Badge variant={healthBadgeVariant(tool.healthStatus)}>
+              <Badge variant={healthBadgeVariant(tool.healthStatus)} className="text-[10px]">
                 {tool.healthStatus}
               </Badge>
             </div>
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>
                 {tool.estimatedResults > 0
-                  ? `~${tool.estimatedResults} results`
-                  : "Pending..."}
+                  ? `~${tool.estimatedResults.toLocaleString()} results`
+                  : "Configuring..."}
               </span>
-              <span>{tool.cost > 0 ? `$${tool.cost.toFixed(2)}` : "—"}</span>
+              <span className="font-medium">
+                {tool.cost > 0 ? `$${tool.cost.toFixed(2)}` : "—"}
+              </span>
             </div>
           </div>
         ))}
-
-        {aiAnalysis && aiAnalysis.length > 0 && (
-          <>
-            <Separator />
-            <div className="flex flex-col gap-1">
-              <span className="text-sm font-medium">AI Analysis</span>
-              {aiAnalysis.map((config, i) => (
-                <span key={i} className="text-xs text-muted-foreground">
-                  {config.description ?? config.type}
-                </span>
-              ))}
-            </div>
-          </>
-        )}
       </CardContent>
-      <CardFooter>
+
+      <CardFooter className="flex flex-col gap-3 pt-3 border-t">
         <div className="flex w-full items-center justify-between">
           <span className="text-sm font-medium">Estimated Total</span>
-          <span className="text-sm font-semibold">${totalCost.toFixed(2)}</span>
+          <span className="text-lg font-bold">
+            {totalCost > 0 ? `$${totalCost.toFixed(2)}` : "—"}
+          </span>
         </div>
+
+        {hasEstimates && onStartResearch && (
+          <Button
+            className="w-full"
+            size="lg"
+            disabled={disabled || starting || totalCost <= 0}
+            onClick={async () => {
+              setStarting(true);
+              onStartResearch();
+            }}
+          >
+            {starting ? "Starting..." : "Start Research"}
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );

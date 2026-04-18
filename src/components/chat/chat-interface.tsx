@@ -58,7 +58,6 @@ export function ChatInterface({
     }),
     messages: initialMessages,
     onFinish: ({ message }) => {
-      // Extract tool and cost data from tool parts
       const newTools: SelectedTool[] = [];
       const costUpdates: { toolId: string; cost: number; resultCount: number }[] = [];
 
@@ -69,14 +68,15 @@ export function ChatInterface({
         const output = part.output as Record<string, unknown>;
         if (!output || typeof output !== "object") continue;
 
-        // searchTools returns an array directly (not wrapped in "results")
-        if (Array.isArray(output)) {
-          for (const r of output) {
+        // searchTools returns { results: [...] }
+        if ("results" in output && Array.isArray(output.results)) {
+          for (const r of output.results) {
             if (r && typeof r === "object" && "name" in r && "id" in r) {
+              const item = r as Record<string, unknown>;
               newTools.push({
-                toolId: String((r as Record<string, unknown>).id),
-                name: String((r as Record<string, unknown>).name),
-                healthStatus: String((r as Record<string, unknown>).healthStatus ?? "unknown"),
+                toolId: String(item.id),
+                name: String(item.name),
+                healthStatus: String(item.healthStatus ?? "unknown"),
                 estimatedResults: 0,
                 cost: 0,
               });
@@ -104,12 +104,9 @@ export function ChatInterface({
 
         // estimateCost returns { expected, min, max, breakdown }
         if ("expected" in output && "breakdown" in output) {
-          const breakdown = String(output.breakdown ?? "");
-          // Extract toolId from the input of this tool call
           const input = "input" in part ? (part.input as Record<string, unknown>) : null;
           const toolId = input ? String(input.toolId ?? "") : "";
           const resultCount = input ? Number(input.resultCount ?? 0) : 0;
-
           if (toolId) {
             costUpdates.push({
               toolId,
@@ -120,16 +117,14 @@ export function ChatInterface({
         }
       }
 
-      // Merge: add new tools, then apply cost updates
+      // Merge new tools + apply cost updates
       setSelectedTools((prev) => {
         let merged = [...prev];
-        // Add new tools (avoid duplicates)
         for (const t of newTools) {
           if (!merged.some((m) => m.toolId === t.toolId)) {
             merged.push(t);
           }
         }
-        // Apply cost updates to matching tools
         for (const update of costUpdates) {
           merged = merged.map((t) =>
             t.toolId === update.toolId
@@ -140,7 +135,6 @@ export function ChatInterface({
         return merged;
       });
 
-      // Update total cost
       const newCostTotal = costUpdates.reduce((sum, u) => sum + u.cost, 0);
       if (newCostTotal > 0) {
         setTotalCost((prev) => prev + newCostTotal);
@@ -167,7 +161,14 @@ export function ChatInterface({
 
       {/* Cost side panel */}
       <div className="w-full shrink-0 lg:w-72">
-        <CostCard tools={selectedTools} totalCost={totalCost} />
+        <CostCard
+          tools={selectedTools}
+          totalCost={totalCost}
+          disabled={isDisabled}
+          onStartResearch={() => {
+            sendMessage({ text: "Confirm. Start the research now." });
+          }}
+        />
       </div>
     </div>
   );
