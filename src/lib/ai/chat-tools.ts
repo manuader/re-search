@@ -103,17 +103,29 @@ export function createChatTools(
     }),
 
     suggestKeywords: tool({
-      description: "Generate optimized search keywords for a tool",
+      description:
+        "Generate optimized search keywords. YOU must provide the keywords array yourself based on the user's research objective. Include variations, colloquial terms, hashtags, and common misspellings in the user's language.",
       inputSchema: z.object({
-        objective: z.string(),
-        toolId: z.string(),
+        objective: z.string().describe("The research objective"),
+        toolId: z.string().describe("The tool to generate keywords for"),
+        keywords: z
+          .array(z.string())
+          .describe("Array of 5-15 suggested keywords YOU generate"),
       }),
-      execute: async ({ objective, toolId }) => {
+      execute: async ({ toolId, keywords }) => {
         const entry = findToolById(toolId);
+        const resultsPerKeyword = 100;
+        const totalResults = keywords.length * resultsPerKeyword;
+        const estimate = estimateCostFromCatalog(toolId, totalResults);
         return {
-          objective,
+          toolId,
           toolName: entry?.name[locale] ?? toolId,
-          hint: "Generate keyword suggestions in your response based on the objective and tool.",
+          keywords,
+          resultsPerKeyword,
+          costPerKeyword: estimate
+            ? Math.round((estimate.expected / keywords.length) * 100) / 100
+            : 0,
+          totalEstimate: estimate?.expected ?? 0,
         };
       },
     }),

@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 
 interface SelectedTool {
+  toolId?: string;
   name: string;
   healthStatus: string;
   estimatedResults: number;
@@ -59,8 +60,12 @@ export function CostCard({ tools, totalCost, aiAnalysis }: CostCardProps) {
               </Badge>
             </div>
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>~{tool.estimatedResults} results</span>
-              <span>${tool.cost.toFixed(2)}</span>
+              <span>
+                {tool.estimatedResults > 0
+                  ? `~${tool.estimatedResults} results`
+                  : "Pending..."}
+              </span>
+              <span>{tool.cost > 0 ? `$${tool.cost.toFixed(2)}` : "—"}</span>
             </div>
           </div>
         ))}

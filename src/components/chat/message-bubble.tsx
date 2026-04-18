@@ -4,13 +4,15 @@ import type { UIMessage } from "ai";
 import { isTextUIPart, isToolUIPart, getToolName } from "ai";
 import ReactMarkdown from "react-markdown";
 import { ToolStatus } from "./tool-status";
+import { KeywordChecklist } from "./keyword-checklist";
 import { cn } from "@/lib/utils";
 
 interface MessageBubbleProps {
   message: UIMessage;
+  onKeywordSelectionChange?: (toolId: string, selected: string[]) => void;
 }
 
-export function MessageBubble({ message }: MessageBubbleProps) {
+export function MessageBubble({ message, onKeywordSelectionChange }: MessageBubbleProps) {
   const isUser = message.role === "user";
 
   return (
@@ -47,6 +49,28 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 
           if (isToolUIPart(part)) {
             const name = getToolName(part);
+
+            // Render interactive keyword checklist
+            if (
+              name === "suggestKeywords" &&
+              part.state === "output-available" &&
+              "output" in part
+            ) {
+              const output = part.output as Record<string, unknown>;
+              if (output && Array.isArray(output.keywords)) {
+                return (
+                  <KeywordChecklist
+                    key={`${message.id}-tool-${i}`}
+                    toolId={String(output.toolId ?? "")}
+                    toolName={String(output.toolName ?? "")}
+                    keywords={output.keywords as string[]}
+                    costPerKeyword={Number(output.costPerKeyword ?? 0)}
+                    onSelectionChange={onKeywordSelectionChange ?? (() => {})}
+                  />
+                );
+              }
+            }
+
             return (
               <ToolStatus
                 key={`${message.id}-tool-${i}`}

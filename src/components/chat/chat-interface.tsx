@@ -32,6 +32,24 @@ export function ChatInterface({
 }: ChatInterfaceProps) {
   const [selectedTools, setSelectedTools] = useState<SelectedTool[]>([]);
   const [totalCost, setTotalCost] = useState(0);
+  const [keywordCosts, setKeywordCosts] = useState<Record<string, { count: number; costPerKeyword: number }>>({});
+
+  function handleKeywordSelectionChange(toolId: string, selected: string[]) {
+    setKeywordCosts((prev) => {
+      const entry = prev[toolId];
+      const costPerKeyword = entry?.costPerKeyword ?? 0;
+      const updated = { ...prev, [toolId]: { count: selected.length, costPerKeyword } };
+
+      // Recalculate total cost from all keyword selections
+      let newTotal = 0;
+      for (const [, v] of Object.entries(updated)) {
+        newTotal += v.count * v.costPerKeyword;
+      }
+      setTotalCost(newTotal);
+
+      return updated;
+    });
+  }
 
   const { messages, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({
@@ -63,6 +81,24 @@ export function ChatInterface({
                 cost: 0,
               });
             }
+          }
+        }
+
+        // suggestKeywords returns { toolId, keywords, costPerKeyword, totalEstimate }
+        if ("keywords" in output && "costPerKeyword" in output) {
+          const kwToolId = String(output.toolId ?? "");
+          const kwCount = Array.isArray(output.keywords) ? output.keywords.length : 0;
+          const cpk = Number(output.costPerKeyword ?? 0);
+          if (kwToolId) {
+            setKeywordCosts((prev) => ({
+              ...prev,
+              [kwToolId]: { count: kwCount, costPerKeyword: cpk },
+            }));
+            costUpdates.push({
+              toolId: kwToolId,
+              cost: Number(output.totalEstimate ?? 0),
+              resultCount: kwCount * Number(output.resultsPerKeyword ?? 100),
+            });
           }
         }
 
@@ -125,7 +161,7 @@ export function ChatInterface({
     <div className="flex h-full flex-col gap-4 lg:flex-row">
       {/* Chat area */}
       <div className="flex flex-1 flex-col rounded-xl border bg-card">
-        <MessageList messages={messages} />
+        <MessageList messages={messages} onKeywordSelectionChange={handleKeywordSelectionChange} />
         <ChatInput onSend={handleSend} disabled={isDisabled} />
       </div>
 
