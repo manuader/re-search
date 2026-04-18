@@ -6,7 +6,7 @@ import { updateSession } from "@/lib/supabase/middleware";
 const intlMiddleware = createMiddleware(routing);
 
 // Routes that don't require authentication
-const publicRoutes = ["/login", "/signup"];
+const publicRoutes = ["/login", "/signup", "/auth/callback"];
 
 function isPublicRoute(pathname: string): boolean {
   // Strip locale prefix to check route
