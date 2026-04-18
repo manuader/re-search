@@ -1,7 +1,7 @@
 "use client";
 
 import type { UIMessage } from "ai";
-import { isTextUIPart, isToolUIPart } from "ai";
+import { isTextUIPart, isToolUIPart, getToolName } from "ai";
 import ReactMarkdown from "react-markdown";
 import { ToolStatus } from "./tool-status";
 import { KeywordChecklist } from "./keyword-checklist";
@@ -48,16 +48,12 @@ export function MessageBubble({ message, onKeywordSelectionChange }: MessageBubb
           }
 
           if (isToolUIPart(part)) {
-            const toolPart = part as { toolName?: string; state: string; output?: unknown };
-            const name = toolPart.toolName ?? "";
+            const name = getToolName(part);
+            const state = "state" in part ? (part as { state: string }).state : "";
 
             // Render interactive keyword checklist
-            if (
-              name === "suggestKeywords" &&
-              toolPart.state === "output-available" &&
-              toolPart.output
-            ) {
-              const output = toolPart.output as Record<string, unknown>;
+            if (name === "suggestKeywords" && state === "output-available") {
+              const output = "output" in part ? (part as { output: unknown }).output as Record<string, unknown> : null;
               if (output && Array.isArray(output.keywords)) {
                 return (
                   <KeywordChecklist
@@ -76,7 +72,7 @@ export function MessageBubble({ message, onKeywordSelectionChange }: MessageBubb
               <ToolStatus
                 key={`${message.id}-tool-${i}`}
                 toolName={name}
-                state={toolPart.state}
+                state={state}
               />
             );
           }

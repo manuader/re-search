@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import { DefaultChatTransport, isToolUIPart, getToolName } from "ai";
 import type { UIMessage } from "ai";
 import type { Locale } from "@/types";
 import { MessageList } from "./message-list";
@@ -63,12 +63,13 @@ export function ChatInterface({
 
       for (const part of message.parts) {
         if (part.type === "text") continue;
+        if (!isToolUIPart(part)) continue;
 
-        const toolPart = part as { toolName?: string; state?: string; output?: unknown; input?: unknown };
-        if (toolPart.state !== "output-available" || !toolPart.output) continue;
+        const name = getToolName(part);
+        const state = "state" in part ? (part as { state: string }).state : "";
+        if (state !== "output-available") continue;
 
-        const name = toolPart.toolName ?? "";
-        const output = toolPart.output as Record<string, unknown>;
+        const output = "output" in part ? (part as { output: unknown }).output as Record<string, unknown> : null;
         if (!output || typeof output !== "object") continue;
 
         // searchTools
@@ -107,7 +108,7 @@ export function ChatInterface({
 
         // estimateCost
         if (name === "estimateCost" && "expected" in output) {
-          const input = toolPart.input as Record<string, unknown> | undefined;
+          const input = "input" in part ? (part as { input: unknown }).input as Record<string, unknown> | undefined : undefined;
           const toolId = input ? String(input.toolId ?? "") : "";
           const resultCount = input ? Number(input.resultCount ?? 0) : 0;
           if (toolId) {
