@@ -152,15 +152,15 @@ export function ChatInterface({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-4 lg:flex-row">
+    <div className="flex h-full min-h-0 flex-col lg:flex-row lg:gap-4 p-4">
       {/* Chat area */}
-      <div className="flex flex-1 flex-col min-h-0 rounded-xl border bg-card">
+      <div className="flex flex-1 flex-col min-h-0 rounded-xl border bg-card overflow-hidden">
         <MessageList messages={messages} onKeywordSelectionChange={handleKeywordSelectionChange} />
         <ChatInput onSend={handleSend} disabled={isDisabled} />
       </div>
 
       {/* Cost side panel */}
-      <div className="w-full shrink-0 lg:w-72">
+      <div className="w-full shrink-0 lg:w-72 lg:overflow-y-auto mt-4 lg:mt-0">
         <CostCard
           tools={selectedTools}
           totalCost={totalCost}
