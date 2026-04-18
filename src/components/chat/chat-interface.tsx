@@ -63,13 +63,16 @@ export function ChatInterface({
 
       for (const part of message.parts) {
         if (part.type === "text") continue;
-        if (!("state" in part) || part.state !== "output-available" || !("output" in part)) continue;
 
-        const output = part.output as Record<string, unknown>;
+        const toolPart = part as { toolName?: string; state?: string; output?: unknown; input?: unknown };
+        if (toolPart.state !== "output-available" || !toolPart.output) continue;
+
+        const name = toolPart.toolName ?? "";
+        const output = toolPart.output as Record<string, unknown>;
         if (!output || typeof output !== "object") continue;
 
-        // searchTools returns { results: [...] }
-        if ("results" in output && Array.isArray(output.results)) {
+        // searchTools
+        if (name === "searchTools" && "results" in output && Array.isArray(output.results)) {
           for (const r of output.results) {
             if (r && typeof r === "object" && "name" in r && "id" in r) {
               const item = r as Record<string, unknown>;
@@ -84,8 +87,8 @@ export function ChatInterface({
           }
         }
 
-        // suggestKeywords returns { toolId, keywords, costPerKeyword, totalEstimate }
-        if ("keywords" in output && "costPerKeyword" in output) {
+        // suggestKeywords
+        if (name === "suggestKeywords" && "keywords" in output) {
           const kwToolId = String(output.toolId ?? "");
           const kwCount = Array.isArray(output.keywords) ? output.keywords.length : 0;
           const cpk = Number(output.costPerKeyword ?? 0);
@@ -102,9 +105,9 @@ export function ChatInterface({
           }
         }
 
-        // estimateCost returns { expected, min, max, breakdown }
-        if ("expected" in output && "breakdown" in output) {
-          const input = "input" in part ? (part.input as Record<string, unknown>) : null;
+        // estimateCost
+        if (name === "estimateCost" && "expected" in output) {
+          const input = toolPart.input as Record<string, unknown> | undefined;
           const toolId = input ? String(input.toolId ?? "") : "";
           const resultCount = input ? Number(input.resultCount ?? 0) : 0;
           if (toolId) {
