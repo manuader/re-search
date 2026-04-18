@@ -279,10 +279,10 @@ export function createChatTools(
             return {
               project_id: projectId,
               tool_id: entry.toolId,
-              actor_id: catalogEntry?.actorId ?? entry.toolId,
-              config: entry.config,
+              tool_name: catalogEntry?.name[locale] ?? entry.toolId,
+              actor_input: { ...catalogEntry?.inputSchema.defaults, ...entry.config },
               estimated_results: entry.estimatedResults,
-              status: "pending",
+              estimated_cost: estimateCostFromCatalog(entry.toolId, entry.estimatedResults)?.expected ?? 0,
             };
           });
 
@@ -298,9 +298,9 @@ export function createChatTools(
           if (aiAnalysis && aiAnalysis.length > 0) {
             const analysisConfigs = aiAnalysis.map((a) => ({
               project_id: projectId,
-              type: a.type,
+              analysis_type: a.type,
+              output_field_name: `ai_${a.type}`,
               config: a.config ?? {},
-              status: "pending",
             }));
 
             await supabase
