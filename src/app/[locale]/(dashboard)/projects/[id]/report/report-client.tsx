@@ -20,10 +20,16 @@ export function ReportClient({ projectId, initialHtmlContent }: ReportClientProp
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ projectId }),
       })
+      const data = await res.json()
       if (res.ok) {
-        const data = await res.json()
-        setHtmlContent(data.html_content ?? null)
+        setHtmlContent(data.htmlContent ?? null)
+      } else {
+        console.error("[report] Generation failed:", data.error)
+        alert(data.error ?? "Report generation failed")
       }
+    } catch (err) {
+      console.error("[report] Network error:", err)
+      alert("Failed to connect to report API")
     } finally {
       setLoading(false)
     }

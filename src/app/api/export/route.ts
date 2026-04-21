@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { flattenRawData } from "@/lib/export/flatten";
 import { generateExcel, generateCsv } from "@/lib/export/excel";
 
@@ -70,10 +71,11 @@ export async function POST(req: Request) {
     contentType = "text/csv";
   }
 
-  // Upload to Supabase Storage
+  // Upload to Supabase Storage using admin client (bypasses storage RLS)
+  const adminClient = createAdminClient();
   const path = `${user.id}/${projectId}/export-${Date.now()}.${format}`;
 
-  const { error: uploadError } = await supabase.storage
+  const { error: uploadError } = await adminClient.storage
     .from("exports")
     .upload(path, fileBuffer, {
       contentType,
@@ -86,7 +88,7 @@ export async function POST(req: Request) {
 
   // Create signed URL valid for 24 hours
   const { data: signedUrlData, error: signedUrlError } =
-    await supabase.storage.from("exports").createSignedUrl(path, 86400);
+    await adminClient.storage.from("exports").createSignedUrl(path, 86400);
 
   if (signedUrlError || !signedUrlData?.signedUrl) {
     return NextResponse.json(

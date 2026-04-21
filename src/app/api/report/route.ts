@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   aggregateProjectData,
   generateReportPrompt,
 } from "@/lib/ai/report-generator";
 
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1";
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY!;
 const SONNET_MODEL = "claude-sonnet-4-6-20250514";
 
 export const maxDuration = 60; // Report generation can take longer
@@ -57,11 +57,16 @@ export async function POST(req: Request) {
   );
 
   // Call Anthropic API (non-streaming, one-shot)
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    return NextResponse.json({ error: "ANTHROPIC_API_KEY not configured" }, { status: 500 });
+  }
+
   const response = await fetch(`${ANTHROPIC_API_URL}/messages`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": ANTHROPIC_API_KEY,
+      "x-api-key": apiKey,
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
@@ -83,8 +88,9 @@ export async function POST(req: Request) {
   const result = await response.json();
   const htmlContent = result.content?.[0]?.text ?? "";
 
-  // Save report to DB
-  const { data: report, error } = await supabase
+  // Save report to DB using admin client (bypasses RLS)
+  const adminClient = createAdminClient();
+  const { data: report, error } = await adminClient
     .from("reports")
     .insert({
       project_id: projectId,
@@ -95,6 +101,7 @@ export async function POST(req: Request) {
     .single();
 
   if (error) {
+    console.error("[report] DB insert error:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
