@@ -324,10 +324,18 @@ export function createChatTools(
           }
 
           // Dispatch Inngest event to start scraping pipeline
-          await inngest.send({
-            name: "research/execute",
-            data: { projectId },
-          });
+          try {
+            const sendResult = await inngest.send({
+              name: "research/execute",
+              data: { projectId },
+            });
+            console.log("[executeResearch] Inngest event sent:", JSON.stringify(sendResult));
+          } catch (inngestErr) {
+            console.error("[executeResearch] Inngest send failed:", inngestErr);
+            return {
+              error: `Failed to start research pipeline: ${inngestErr instanceof Error ? inngestErr.message : String(inngestErr)}`,
+            };
+          }
 
           // Update project status to 'running'
           await supabase
