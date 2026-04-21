@@ -270,7 +270,8 @@ export function createChatTools(
             .eq("user_id", userId);
 
           if (projectError) {
-            return { error: errorMessages[locale].projectUpdateFailed };
+            console.error("[executeResearch] project update error:", JSON.stringify(projectError));
+            return { error: `DB error (project): ${projectError.message}` };
           }
 
           // 3. Create scraping jobs
@@ -291,7 +292,8 @@ export function createChatTools(
             .insert(scrapingJobs);
 
           if (jobsError) {
-            return { error: errorMessages[locale].generic };
+            console.error("[executeResearch] scraping_jobs insert error:", JSON.stringify(jobsError));
+            return { error: `DB error (jobs): ${jobsError.message}` };
           }
 
           // 4. Create AI analysis configs if provided
@@ -303,9 +305,12 @@ export function createChatTools(
               config: a.config ?? {},
             }));
 
-            await supabase
+            const { error: aiError } = await supabase
               .from("ai_analysis_configs")
               .insert(analysisConfigs);
+            if (aiError) {
+              console.error("[executeResearch] ai_analysis_configs insert error:", JSON.stringify(aiError));
+            }
           }
 
           // 5. Reserve credits via negative transaction
@@ -320,7 +325,8 @@ export function createChatTools(
             });
 
           if (txError) {
-            return { error: errorMessages[locale].generic };
+            console.error("[executeResearch] transaction insert error:", JSON.stringify(txError));
+            return { error: `DB error (tx): ${txError.message}` };
           }
 
           // Dispatch Inngest event to start scraping pipeline
