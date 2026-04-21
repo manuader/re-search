@@ -1,5 +1,10 @@
 const APIFY_BASE_URL = "https://api.apify.com/v2";
-const APIFY_TOKEN = process.env.APIFY_API_TOKEN!;
+
+function getToken(): string {
+  const token = process.env.APIFY_API_TOKEN;
+  if (!token) throw new Error("APIFY_API_TOKEN is not set");
+  return token;
+}
 
 export interface ApifyRunResult {
   id: string;
@@ -21,7 +26,7 @@ export async function startActorRun(
   // Apify uses ~ as separator in URLs (e.g., apidojo~tweet-scraper)
   const encodedActorId = actorId.replace("/", "~");
   const res = await fetch(
-    `${APIFY_BASE_URL}/acts/${encodedActorId}/runs?token=${APIFY_TOKEN}`,
+    `${APIFY_BASE_URL}/acts/${encodedActorId}/runs?token=${getToken()}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -40,7 +45,7 @@ export async function startActorRun(
 
 export async function getRunStatus(runId: string): Promise<ApifyRunResult> {
   const res = await fetch(
-    `${APIFY_BASE_URL}/actor-runs/${runId}?token=${APIFY_TOKEN}`
+    `${APIFY_BASE_URL}/actor-runs/${runId}?token=${getToken()}`
   );
 
   if (!res.ok) {
@@ -55,7 +60,7 @@ export async function getDatasetItems(
   datasetId: string,
   limit?: number
 ): Promise<unknown[]> {
-  const params = new URLSearchParams({ token: APIFY_TOKEN });
+  const params = new URLSearchParams({ token: getToken() });
   if (limit) params.set("limit", String(limit));
 
   const res = await fetch(
