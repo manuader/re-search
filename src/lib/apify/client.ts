@@ -18,8 +18,10 @@ export async function startActorRun(
   actorId: string,
   input: Record<string, unknown>
 ): Promise<ApifyRunResult> {
+  // Apify uses ~ as separator in URLs (e.g., apidojo~tweet-scraper)
+  const encodedActorId = actorId.replace("/", "~");
   const res = await fetch(
-    `${APIFY_BASE_URL}/acts/${actorId}/runs?token=${APIFY_TOKEN}`,
+    `${APIFY_BASE_URL}/acts/${encodedActorId}/runs?token=${APIFY_TOKEN}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
