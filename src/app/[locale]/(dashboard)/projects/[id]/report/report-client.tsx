@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useCallback } from "react"
 import { ReportViewer } from "@/components/project/report-viewer"
 
 interface ReportClientProps {
@@ -8,50 +8,92 @@ interface ReportClientProps {
   initialHtmlContent: string | null
 }
 
+const POLL_INTERVAL = 5000
+const MAX_POLLS = 60 // 5 minutes max
+
 export function ReportClient({ projectId, initialHtmlContent }: ReportClientProps) {
   const [htmlContent, setHtmlContent] = useState<string | null>(initialHtmlContent)
   const [loading, setLoading] = useState(false)
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const initialCreatedAt = useRef<string | null>(null)
+
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current)
+      pollRef.current = null
+    }
+  }, [])
 
   async function handleGenerate() {
     setLoading(true)
-    try {
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 150000) // 2.5 min
 
+    // Remember the current latest report timestamp so we can detect a NEW one
+    try {
+      const statusRes = await fetch(`/api/report/status?projectId=${projectId}`)
+      const statusData = await statusRes.json()
+      initialCreatedAt.current = statusData.createdAt ?? null
+    } catch {
+      initialCreatedAt.current = null
+    }
+
+    // Dispatch to Inngest via API
+    try {
       const res = await fetch("/api/report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ projectId }),
-        signal: controller.signal,
       })
-      clearTimeout(timeout)
 
       const text = await res.text()
       let data: Record<string, unknown>
       try {
         data = JSON.parse(text)
       } catch {
-        console.error("[report] Non-JSON response:", text.slice(0, 500))
+        setLoading(false)
         alert("Report API returned invalid response")
         return
       }
 
-      if (res.ok) {
-        setHtmlContent((data.htmlContent as string) ?? null)
-      } else {
-        console.error("[report] Generation failed:", data.error)
-        alert((data.error as string) ?? "Report generation failed")
+      if (!res.ok) {
+        setLoading(false)
+        alert((data.error as string) ?? "Failed to start report generation")
+        return
       }
     } catch (err) {
-      if (err instanceof DOMException && err.name === "AbortError") {
-        alert("Report generation timed out. Please try again.")
-      } else {
-        console.error("[report] Network error:", err)
-        alert("Failed to connect to report API")
-      }
-    } finally {
       setLoading(false)
+      console.error("[report] Dispatch error:", err)
+      alert("Failed to connect to report API")
+      return
     }
+
+    // Poll for completion
+    let pollCount = 0
+    stopPolling()
+    pollRef.current = setInterval(async () => {
+      pollCount++
+      if (pollCount > MAX_POLLS) {
+        stopPolling()
+        setLoading(false)
+        alert("Report generation timed out. Please refresh and try again.")
+        return
+      }
+
+      try {
+        const res = await fetch(`/api/report/status?projectId=${projectId}`)
+        const data = await res.json()
+
+        if (
+          data.status === "ready" &&
+          data.createdAt !== initialCreatedAt.current
+        ) {
+          stopPolling()
+          setHtmlContent(data.htmlContent ?? null)
+          setLoading(false)
+        }
+      } catch {
+        // Network blip — keep polling
+      }
+    }, POLL_INTERVAL)
   }
 
   return (
@@ -63,7 +105,7 @@ export function ReportClient({ projectId, initialHtmlContent }: ReportClientProp
             disabled={loading}
             className="text-xs text-muted-foreground underline hover:text-foreground"
           >
-            {loading ? "Regenerating..." : "Regenerate report"}
+            {loading ? "Generating..." : "Regenerate report"}
           </button>
         </div>
       )}
