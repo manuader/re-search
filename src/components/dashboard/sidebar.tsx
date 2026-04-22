@@ -14,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 interface Project {
@@ -41,8 +42,20 @@ export function Sidebar({ creditBalance, projects, userEmail }: SidebarProps) {
   const t = useTranslations();
   const locale = useLocale();
   const router = useRouter();
+  const pathname = usePathname();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
+
+  async function handleSwitchLocale() {
+    const newLocale = locale === "en" ? "es" : "en";
+    // Save to profile
+    const supabase = createClient();
+    await supabase.from("profiles").update({ locale: newLocale }).eq("id", (await supabase.auth.getUser()).data.user?.id ?? "");
+    // Navigate to same path with new locale prefix
+    const newPath = pathname.replace(`/${locale}`, `/${newLocale}`);
+    router.push(newPath);
+    router.refresh();
+  }
 
   async function handleRename(projectId: string) {
     if (!editTitle.trim()) {
@@ -139,6 +152,9 @@ export function Sidebar({ creditBalance, projects, userEmail }: SidebarProps) {
         <DropdownMenuContent align="start" side="top" className="w-56">
           <DropdownMenuItem onClick={() => router.push(`/${locale}/billing`)}>
             {t("billing.credits")}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleSwitchLocale}>
+            {locale === "en" ? "Cambiar a Español" : "Switch to English"}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
