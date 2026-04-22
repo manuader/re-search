@@ -6,7 +6,6 @@ import { buildReportPrompt } from "@/lib/reports/report-prompt";
 import { mapToolNameToSourceType } from "@/lib/reports/influence-weight";
 import {
   validateReportHTML,
-  buildValidationFeedback,
   numbersAreGrounded,
 } from "@/lib/reports/validators";
 import type { RawDataItem, EnrichmentFlags } from "@/lib/reports/types";
@@ -14,7 +13,7 @@ import type { RawDataItem, EnrichmentFlags } from "@/lib/reports/types";
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1";
 const SONNET_MODEL = "claude-sonnet-4-20250514";
 
-export const maxDuration = 120; // Allow retry on validation failure
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -161,7 +160,7 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         model: SONNET_MODEL,
-        max_tokens: 16384,
+        max_tokens: 12000,
         system: systemPrompt,
         messages,
       }),
@@ -189,28 +188,13 @@ export async function POST(req: Request) {
     );
   }
 
-  // ── 10. Structural validation (retry once if fails) ───────────────
+  // ── 10. Structural validation (log only, no retry to stay within timeout) ──
   const validation = validateReportHTML(htmlContent);
   console.log("[report] Structural validation:", validation.checks);
 
   if (!validation.ok) {
-    console.warn("[report] Structural validation failed, retrying...");
-    const feedback = buildValidationFeedback(validation.checks);
-    try {
-      htmlContent = await callLLM(system, [
-        { role: "user", content: userMessage },
-        { role: "assistant", content: htmlContent },
-        { role: "user", content: feedback },
-      ]);
-      const retryValidation = validateReportHTML(htmlContent);
-      if (!retryValidation.ok) {
-        qualityFlag = "structural_issues";
-        console.warn("[report] Retry also failed validation:", retryValidation.checks);
-      }
-    } catch {
-      qualityFlag = "structural_issues";
-      console.warn("[report] Retry LLM call failed, proceeding with original");
-    }
+    qualityFlag = "structural_issues";
+    console.warn("[report] Structural validation failed:", validation.checks);
   }
 
   // ── 11. Numeric grounding check ───────────────────────────────────
