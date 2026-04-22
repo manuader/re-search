@@ -226,14 +226,16 @@ export async function POST(req: Request) {
 
   // ── 12. Save to DB ────────────────────────────────────────────────
   const adminClient = createAdminClient();
+  const insertPayload: Record<string, unknown> = {
+    project_id: projectId,
+    title: `Report: ${project.title}`,
+    html_content: htmlContent,
+  };
+  if (qualityFlag) insertPayload.quality_flag = qualityFlag;
+
   const { data: report, error } = await adminClient
     .from("reports")
-    .insert({
-      project_id: projectId,
-      title: `Report: ${project.title}`,
-      html_content: htmlContent,
-      quality_flag: qualityFlag,
-    })
+    .insert(insertPayload)
     .select("id")
     .single();
 

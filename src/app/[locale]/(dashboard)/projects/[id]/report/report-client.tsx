@@ -15,21 +15,40 @@ export function ReportClient({ projectId, initialHtmlContent }: ReportClientProp
   async function handleGenerate() {
     setLoading(true)
     try {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 150000) // 2.5 min
+
       const res = await fetch("/api/report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ projectId }),
+        signal: controller.signal,
       })
-      const data = await res.json()
+      clearTimeout(timeout)
+
+      const text = await res.text()
+      let data: Record<string, unknown>
+      try {
+        data = JSON.parse(text)
+      } catch {
+        console.error("[report] Non-JSON response:", text.slice(0, 500))
+        alert("Report API returned invalid response")
+        return
+      }
+
       if (res.ok) {
-        setHtmlContent(data.htmlContent ?? null)
+        setHtmlContent((data.htmlContent as string) ?? null)
       } else {
         console.error("[report] Generation failed:", data.error)
-        alert(data.error ?? "Report generation failed")
+        alert((data.error as string) ?? "Report generation failed")
       }
     } catch (err) {
-      console.error("[report] Network error:", err)
-      alert("Failed to connect to report API")
+      if (err instanceof DOMException && err.name === "AbortError") {
+        alert("Report generation timed out. Please try again.")
+      } else {
+        console.error("[report] Network error:", err)
+        alert("Failed to connect to report API")
+      }
     } finally {
       setLoading(false)
     }
