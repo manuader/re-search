@@ -36,12 +36,25 @@ export function ReportClient({ projectId, initialHtmlContent }: ReportClientProp
   }
 
   return (
-    <div className="h-full w-full">
-      <ReportViewer
-        htmlContent={htmlContent}
-        loading={loading}
-        onGenerate={handleGenerate}
-      />
+    <div className="flex h-full w-full flex-col">
+      {htmlContent && (
+        <div className="flex items-center justify-end border-b px-4 py-2">
+          <button
+            onClick={handleGenerate}
+            disabled={loading}
+            className="text-xs text-muted-foreground underline hover:text-foreground"
+          >
+            {loading ? "Regenerating..." : "Regenerate report"}
+          </button>
+        </div>
+      )}
+      <div className="flex-1 min-h-0">
+        <ReportViewer
+          htmlContent={htmlContent}
+          loading={loading}
+          onGenerate={handleGenerate}
+        />
+      </div>
     </div>
   )
 }
