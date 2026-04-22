@@ -15,7 +15,7 @@ export function ReportViewer({ htmlContent, loading, onGenerate }: ReportViewerP
   if (htmlContent) {
     return (
       <iframe
-        sandbox="allow-scripts"
+        sandbox="allow-scripts allow-same-origin"
         srcDoc={htmlContent}
         className="h-full w-full border-0"
         title="Research Report"

@@ -292,29 +292,32 @@ export function generateReportPrompt(
 Your task: produce a COMPLETE, self-contained HTML document that renders a polished research report.
 
 Technical requirements:
-- Include React 18 via unpkg CDN: https://unpkg.com/react@18/umd/react.production.min.js and https://unpkg.com/react-dom@18/umd/react-dom.production.min.js
-- Include Recharts 2 via unpkg CDN: https://unpkg.com/recharts@2/umd/Recharts.js
-- Include Babel standalone for JSX: https://unpkg.com/@babel/standalone/babel.min.js
-- All styles must be inline or in a <style> block — no external CSS
-- The design must be responsive and use a professional dark theme (dark backgrounds #0f172a / #1e293b, light text, accent colors for charts)
-- Use modern typography and generous spacing
+- Use Chart.js via CDN: <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+- Use ONLY vanilla HTML, CSS, and JavaScript — NO React, NO JSX, NO Babel
+- All styles in a <style> block — no external CSS
+- Create charts using Chart.js (new Chart(ctx, config)) with <canvas> elements
+- Professional dark theme: backgrounds #0f172a/#1e293b, text #f8fafc/#cbd5e1, accent #60a5fa/#34d399/#fbbf24/#f87171
+- Responsive design with max-width container, CSS grid for stats cards
+- Modern typography (system fonts), generous spacing, rounded corners, subtle borders
 
 Required report sections:
 1. **Executive Summary** — 3-5 bullet points covering the most important findings
 2. **Key Insights** — data-driven insights derived from the numbers and AI analysis results
-3. **Visualizations** — use Recharts (BarChart, PieChart, LineChart as appropriate) to visualize:
-   - Results distribution by source/tool
-   - Sentiment distribution (if available)
-   - Top categories (if available)
-   - Any other relevant metrics
-4. **Breakdown by Source** — detailed stats per data source tool
-5. **Recommendations** — actionable next steps based on the data
+3. **Visualizations** — use Chart.js to create:
+   - Bar chart for results distribution by source/tool
+   - Pie/doughnut chart for sentiment distribution (if available)
+   - Bar chart for top categories (if available)
+   - Any other relevant charts based on the data
+4. **Sample Content Analysis** — show 3-5 representative data points from the sample items
+5. **Breakdown by Source** — detailed stats per data source tool
+6. **Recommendations** — actionable next steps based on the data
 
 Content rules:
 - The entire report (headings, body text, labels, chart labels) must be written in ${locale === "es" ? "Spanish (Latin American)" : "English"}
 - Project title: "${projectTitle}"
 - Base all analysis strictly on the provided data — do not invent numbers
 - If sentiment/category/pain-point data is null, skip those visualizations gracefully
+- Analyze the sample content to extract meaningful patterns even if AI analysis was not run
 
 Response format:
 - Respond with ONLY the raw HTML document (starting with <!DOCTYPE html>)
