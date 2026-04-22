@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import { ChevronUpIcon, ChevronDownIcon, ChevronsUpDownIcon } from "lucide-react"
+import { useState, useMemo, useCallback, useRef, useEffect } from "react"
+import { ChevronUpIcon, ChevronDownIcon, ChevronsUpDownIcon, CopyIcon, CheckIcon, XIcon } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -36,11 +36,60 @@ function formatCellValue(value: unknown): string {
   return String(value)
 }
 
+function CellDetail({ value, onClose }: { value: string; onClose: () => void }) {
+  const [copied, setCopied] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose()
+    }
+    document.addEventListener("mousedown", handleClick)
+    document.addEventListener("keydown", handleKey)
+    return () => {
+      document.removeEventListener("mousedown", handleClick)
+      document.removeEventListener("keydown", handleKey)
+    }
+  }, [onClose])
+
+  const handleCopy = useCallback(async () => {
+    await navigator.clipboard.writeText(value)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }, [value])
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div ref={ref} className="mx-4 flex max-h-[70vh] w-full max-w-lg flex-col rounded-lg border border-border bg-background shadow-lg">
+        <div className="flex items-center justify-between border-b px-4 py-2">
+          <span className="text-sm font-medium">Cell value</span>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" onClick={handleCopy} className="h-7 gap-1 text-xs">
+              {copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
+              {copied ? "Copied" : "Copy"}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={onClose} className="h-7 w-7 p-0">
+              <XIcon className="size-3.5" />
+            </Button>
+          </div>
+        </div>
+        <div className="flex-1 overflow-auto p-4">
+          <pre className="whitespace-pre-wrap break-all text-sm text-foreground/90">{value}</pre>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function DataTable({ data, loading }: DataTableProps) {
   const [search, setSearch] = useState("")
   const [sortCol, setSortCol] = useState<string | null>(null)
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
   const [page, setPage] = useState(1)
+  const [selectedCell, setSelectedCell] = useState<string | null>(null)
 
   const flattenedRows = useMemo(
     () => data.rows.map((row) => flattenRecord(row)),
@@ -133,7 +182,7 @@ export function DataTable({ data, loading }: DataTableProps) {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex h-full flex-col gap-3">
       {/* Search */}
       <div className="flex items-center gap-2">
         <Input
@@ -150,10 +199,13 @@ export function DataTable({ data, loading }: DataTableProps) {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-lg border border-border">
+      <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-border">
         <table className="w-full min-w-max text-sm">
           <thead className="sticky top-0 z-10">
             <tr className="border-b border-border bg-muted/70 backdrop-blur-sm">
+              <th className="whitespace-nowrap px-3 py-2 text-center font-medium text-muted-foreground w-12">
+                #
+              </th>
               {columns.map((col) => (
                 <th
                   key={col}
@@ -191,33 +243,46 @@ export function DataTable({ data, loading }: DataTableProps) {
             {pagedRows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={columns.length || 1}
+                  colSpan={columns.length + 1}
                   className="px-3 py-12 text-center text-sm text-muted-foreground"
                 >
                   No data available
                 </td>
               </tr>
             ) : (
-              pagedRows.map((row, i) => (
-                <tr
-                  key={i}
-                  className="border-b border-border last:border-0 hover:bg-muted/40 transition-colors"
-                >
-                  {columns.map((col) => (
-                    <td
-                      key={col}
-                      className="max-w-[280px] truncate whitespace-nowrap px-3 py-2 text-foreground/80"
-                      title={formatCellValue(row[col])}
-                    >
-                      {formatCellValue(row[col])}
+              pagedRows.map((row, i) => {
+                const globalIndex = (currentPage - 1) * ROWS_PER_PAGE + i + 1
+                return (
+                  <tr
+                    key={i}
+                    className="border-b border-border last:border-0 hover:bg-muted/40 transition-colors"
+                  >
+                    <td className="whitespace-nowrap px-3 py-2 text-center text-xs text-muted-foreground tabular-nums">
+                      {globalIndex}
                     </td>
-                  ))}
-                </tr>
-              ))
+                    {columns.map((col) => {
+                      const cellValue = formatCellValue(row[col])
+                      return (
+                        <td
+                          key={col}
+                          className="max-w-[280px] truncate whitespace-nowrap px-3 py-2 text-foreground/80 cursor-pointer hover:bg-muted/60 transition-colors"
+                          onClick={() => cellValue && setSelectedCell(cellValue)}
+                        >
+                          {cellValue}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                )
+              })
             )}
           </tbody>
         </table>
       </div>
+
+      {selectedCell !== null && (
+        <CellDetail value={selectedCell} onClose={() => setSelectedCell(null)} />
+      )}
 
       {/* Pagination */}
       {totalPages > 1 && (
