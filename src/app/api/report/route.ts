@@ -7,7 +7,7 @@ import {
 } from "@/lib/ai/report-generator";
 
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1";
-const SONNET_MODEL = "claude-sonnet-4-6-20250514";
+const SONNET_MODEL = "claude-sonnet-4-20250514";
 
 export const maxDuration = 60; // Report generation can take longer
 
