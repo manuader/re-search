@@ -1,6 +1,8 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { inngest } from "@/lib/inngest/client";
+import { logTransition } from "@/lib/orders/state-machine";
 
 interface MPWebhookBody {
   action: string;
@@ -11,10 +13,12 @@ interface MPWebhookBody {
 interface MPPayment {
   id: number;
   status: string;
+  status_detail: string;
   metadata: {
+    order_id?: string;
     user_id?: string;
-    credit_amount?: number;
   };
+  external_reference: string;
 }
 
 function verifySignature(
@@ -23,7 +27,6 @@ function verifySignature(
   dataId: string,
   secret: string
 ): boolean {
-  // x-signature format: "ts=TIMESTAMP,v1=HASH"
   let ts: string | null = null;
   let v1: string | null = null;
 
@@ -35,7 +38,6 @@ function verifySignature(
 
   if (!ts || !v1) return false;
 
-  // Build the manifest string per MP docs
   const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
 
   const calculated = createHmac("sha256", secret)
@@ -45,7 +47,6 @@ function verifySignature(
   try {
     return timingSafeEqual(Buffer.from(calculated, "hex"), Buffer.from(v1, "hex"));
   } catch {
-    // Buffer lengths differ — signature is definitely wrong
     return false;
   }
 }
@@ -73,7 +74,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const xSignature = req.headers.get("x-signature") ?? "";
   const xRequestId = req.headers.get("x-request-id") ?? "";
-  // data.id comes from the query string MP appends to the notification_url
   const dataId = req.nextUrl.searchParams.get("data.id") ?? body.data?.id ?? "";
 
   if (!verifySignature(xSignature, xRequestId, dataId, secret)) {
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // 4. Fetch payment details from MP API
+  // 4. Fetch payment details from MP API (never trust webhook body alone)
   const paymentId = body.data.id;
   const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
   if (!accessToken) {
@@ -93,17 +93,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     const mpRes = await fetch(
       `https://api.mercadopago.com/v1/payments/${paymentId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
+      { headers: { Authorization: `Bearer ${accessToken}` } }
     );
 
     if (!mpRes.ok) {
-      console.error(
-        `[MP Webhook] Failed to fetch payment ${paymentId}: ${mpRes.status}`
-      );
+      console.error(`[MP Webhook] Failed to fetch payment ${paymentId}: ${mpRes.status}`);
       return NextResponse.json({ error: "Failed to fetch payment" }, { status: 500 });
     }
 
@@ -113,34 +107,117 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Failed to fetch payment" }, { status: 500 });
   }
 
-  // 5. Only process approved payments
-  if (payment.status !== "approved") {
-    return NextResponse.json({ received: true }, { status: 200 });
-  }
-
-  const userId = payment.metadata?.user_id;
-  const creditAmount = payment.metadata?.credit_amount;
-
-  if (!userId || creditAmount == null) {
-    console.error(
-      "[MP Webhook] Missing user_id or credit_amount in payment metadata",
-      payment.metadata
-    );
-    return NextResponse.json({ error: "Missing metadata" }, { status: 400 });
-  }
-
-  // 6. Insert credit transaction using admin client (no user session in webhooks)
   const supabase = createAdminClient();
-  const { error: insertError } = await supabase.from("transactions").insert({
-    user_id: userId,
-    amount: +creditAmount,
-    type: "credit_purchase",
-    description: "Credit purchase via Mercado Pago",
-  });
+  const orderId = payment.metadata?.order_id ?? payment.external_reference;
 
-  if (insertError) {
-    console.error("[MP Webhook] Failed to insert transaction:", insertError);
-    return NextResponse.json({ error: "Database error" }, { status: 500 });
+  if (!orderId) {
+    console.error("[MP Webhook] No order_id in payment metadata", payment.metadata);
+    return NextResponse.json({ error: "Missing order reference" }, { status: 400 });
+  }
+
+  // 5. Handle based on payment status
+  if (payment.status === "approved") {
+    // Idempotency: check if already processed
+    const { data: existingOrder } = await supabase
+      .from("research_orders")
+      .select("id, status, user_id, project_id, kind")
+      .eq("id", orderId)
+      .single();
+
+    if (!existingOrder) {
+      console.error(`[MP Webhook] Order ${orderId} not found`);
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    // Already processed — return 200 (idempotent)
+    if (existingOrder.status !== "pending_payment") {
+      console.log(
+        JSON.stringify({
+          event: "webhook.idempotent_skip",
+          orderId,
+          mpPaymentId: paymentId,
+          currentStatus: existingOrder.status,
+        })
+      );
+      return NextResponse.json({ received: true }, { status: 200 });
+    }
+
+    // Optimistic lock: only update if still pending_payment
+    const { data: updated, error: updateError } = await supabase
+      .from("research_orders")
+      .update({
+        status: "paid",
+        payment_id: String(payment.id),
+        payment_status: payment.status,
+        paid_at: new Date().toISOString(),
+      })
+      .eq("id", orderId)
+      .eq("status", "pending_payment")
+      .select("id, kind, project_id")
+      .single();
+
+    if (updateError || !updated) {
+      // Another webhook beat us — that's fine
+      console.log(
+        JSON.stringify({
+          event: "webhook.concurrent_skip",
+          orderId,
+          mpPaymentId: paymentId,
+        })
+      );
+      return NextResponse.json({ received: true }, { status: 200 });
+    }
+
+    logTransition({
+      orderId,
+      userId: existingOrder.user_id,
+      projectId: existingOrder.project_id,
+      fromStatus: "pending_payment",
+      toStatus: "paid",
+    });
+
+    // Dispatch Inngest event based on order kind
+    if (updated.kind === "research") {
+      await inngest.send({
+        name: "research/execute",
+        data: { projectId: updated.project_id, orderId: updated.id },
+      });
+    } else {
+      await inngest.send({
+        name: "report/generate",
+        data: {
+          projectId: updated.project_id,
+          orderId: updated.id,
+          userId: existingOrder.user_id,
+          locale: "en", // Will be resolved from profile in the function
+        },
+      });
+    }
+
+    console.log(
+      JSON.stringify({
+        event: "webhook.payment_processed",
+        orderId,
+        mpPaymentId: paymentId,
+        kind: updated.kind,
+        action: "transitioned_to_paid",
+      })
+    );
+  } else if (payment.status === "rejected") {
+    // Update payment status but don't change order status
+    await supabase
+      .from("research_orders")
+      .update({ payment_status: payment.status })
+      .eq("id", orderId);
+
+    console.log(
+      JSON.stringify({
+        event: "webhook.payment_rejected",
+        orderId,
+        mpPaymentId: paymentId,
+        reason: payment.status_detail,
+      })
+    );
   }
 
   return NextResponse.json({ received: true }, { status: 200 });

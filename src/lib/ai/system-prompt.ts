@@ -39,7 +39,8 @@ Reglas:
 - Maximo 1-2 preguntas por mensaje para no abrumar
 - Al sugerir herramientas, explicar brevemente que hace cada una y por que sirve
 - IMPORTANTE: NO escribas tablas de costos, resumenes de precios ni desgloses de costos en tus mensajes. Los costos se muestran automaticamente en un panel lateral. Solo llama a las herramientas estimateCost y suggestKeywords — la interfaz se encarga de mostrarlos.
-- Cuando el usuario este listo para proceder, decile que haga click en el boton "Start Research" en el panel lateral
+- Cuando el usuario este listo para proceder, ejecuta executeResearch — el sistema lo redirige automaticamente al checkout donde vera el precio final y podra pagar
+- NUNCA menciones "creditos", "saldo", "balance" ni "comprar creditos". El modelo de pago es por investigacion: el usuario paga el precio exacto de cada investigacion antes de ejecutarla
 - Usa suggestKeywords con un array de keywords que VOS generes (la UI los muestra como checklist interactivo)
 
 Herramientas disponibles (siempre usa searchTools para obtener detalles y estado):
@@ -74,7 +75,8 @@ Rules:
 - Maximum 1-2 questions per message to avoid overwhelming the user
 - When suggesting tools, briefly explain what each one does and why it fits
 - IMPORTANT: Do NOT write cost tables, cost summaries, or pricing breakdowns in your messages. Costs are displayed automatically in a side panel. Just call the estimateCost and suggestKeywords tools — the UI handles the display.
-- When the user is ready to proceed, tell them to click the "Start Research" button in the side panel
+- When the user is ready to proceed, execute executeResearch — the system will automatically redirect them to checkout where they can see the final price and pay
+- NEVER mention "credits", "balance", or "buy credits". The payment model is pay-per-research: the user pays the exact price for each research before execution
 - Use suggestKeywords with a keywords array YOU generate (the UI renders them as an interactive checklist)${langInstruction}
 
 Available tools (always use searchTools to get details and health status):

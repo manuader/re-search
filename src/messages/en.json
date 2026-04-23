@@ -39,23 +39,98 @@
     }
   },
   "billing": {
-    "credits": "Credits",
-    "balance": "Available Credits",
-    "buyCredits": "Buy Credits",
-    "transactionHistory": "Transaction History",
-    "estimateNote": "~{count} research projects",
     "title": "Billing",
-    "paymentSuccess": "Payment successful! Credits added.",
-    "paymentFailure": "Payment failed. Please try again.",
-    "paymentPending": "Payment pending. Credits will be added once confirmed.",
-    "customAmount": "Custom amount",
-    "minAmount": "Minimum $5",
-    "transactionTypes": {
-      "credit_purchase": "Credit Purchase",
-      "scraping_reserve": "Research Reserve",
-      "scraping_cost": "Research Cost Adjustment",
-      "ai_cost": "AI Analysis Cost",
-      "refund": "Refund"
+    "tabs": {
+      "history": "History",
+      "pending": "Pending Payments",
+      "refunds": "Refunds"
+    },
+    "history": {
+      "empty": "No orders yet",
+      "emptyDescription": "Your order history will appear here after your first research.",
+      "date": "Date",
+      "project": "Project",
+      "type": "Type",
+      "amount": "Amount",
+      "status": "Status"
+    },
+    "pending": {
+      "empty": "No pending payments",
+      "emptyDescription": "You have no orders awaiting payment.",
+      "payNow": "Pay Now",
+      "cancel": "Cancel",
+      "expiresIn": "Expires in {minutes} min"
+    },
+    "refunds": {
+      "empty": "No refunds",
+      "emptyDescription": "You have no refund history.",
+      "amount": "Refund Amount",
+      "reason": "Reason",
+      "pending": "Processing"
+    },
+    "orderKind": {
+      "research": "Research",
+      "report": "Report"
+    },
+    "orderStatus": {
+      "pending_payment": "Pending Payment",
+      "paid": "Paid",
+      "executing": "Executing",
+      "completed": "Completed",
+      "completed_partial": "Partially Completed",
+      "failed": "Failed",
+      "refunded": "Refunded",
+      "refund_pending": "Refund Pending",
+      "expired": "Expired"
+    }
+  },
+  "checkout": {
+    "title": "Checkout",
+    "subtitle": "Review your research and pay to start execution",
+    "researchSummary": "Research Summary",
+    "tools": "Tools",
+    "estimatedResults": "Est. Results",
+    "aiAnalysis": "AI Analysis",
+    "reportType": "Report Type",
+    "reportTypes": {
+      "none": "No Report",
+      "executive": "Executive",
+      "professional": "Professional",
+      "technical": "Technical"
+    },
+    "reportDescriptions": {
+      "none": "Generate a report later (separate order)",
+      "executive": "High-level summary for decision makers",
+      "professional": "Balanced analysis with charts and recommendations",
+      "technical": "Full statistical deep-dive with raw data"
+    },
+    "priceBreakdown": "Price Breakdown",
+    "breakdown": {
+      "scraping": "Data Collection",
+      "aiAnalysis": "AI Analysis",
+      "report": "Report Generation",
+      "chatbot": "Planning",
+      "buffer": "Safety Buffer",
+      "markup": "Service Fee"
+    },
+    "total": "Total",
+    "payAndExecute": "Pay {amount} and Execute",
+    "disclaimer": "The price is final. No refunds except in case of system failure.",
+    "processing": "Creating payment...",
+    "success": {
+      "title": "Payment Received",
+      "description": "Your research is now running. You can track progress in your project.",
+      "viewProject": "View Project"
+    },
+    "failure": {
+      "title": "Payment Failed",
+      "description": "The payment was not completed. You can try again.",
+      "retry": "Try Again"
+    },
+    "pending": {
+      "title": "Payment Pending",
+      "description": "Your payment is being processed. Your research will start once confirmed.",
+      "viewProject": "View Project"
     }
   }
 }

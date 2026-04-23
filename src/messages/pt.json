@@ -39,23 +39,98 @@
     }
   },
   "billing": {
-    "credits": "Créditos",
-    "balance": "Créditos Disponíveis",
-    "buyCredits": "Comprar Créditos",
-    "transactionHistory": "Histórico de Transações",
-    "estimateNote": "~{count} projetos de pesquisa",
     "title": "Faturamento",
-    "paymentSuccess": "Pagamento realizado! Créditos adicionados.",
-    "paymentFailure": "Pagamento falhou. Tente novamente.",
-    "paymentPending": "Pagamento pendente. Créditos serão adicionados após confirmação.",
-    "customAmount": "Valor personalizado",
-    "minAmount": "Mínimo $5",
-    "transactionTypes": {
-      "credit_purchase": "Compra de Créditos",
-      "scraping_reserve": "Reserva de Pesquisa",
-      "scraping_cost": "Ajuste de Custo de Pesquisa",
-      "ai_cost": "Custo de Análise IA",
-      "refund": "Reembolso"
+    "tabs": {
+      "history": "Histórico",
+      "pending": "Pagamentos Pendentes",
+      "refunds": "Reembolsos"
+    },
+    "history": {
+      "empty": "Nenhum pedido ainda",
+      "emptyDescription": "Seu histórico de pedidos aparecerá aqui após sua primeira pesquisa.",
+      "date": "Data",
+      "project": "Projeto",
+      "type": "Tipo",
+      "amount": "Valor",
+      "status": "Status"
+    },
+    "pending": {
+      "empty": "Nenhum pagamento pendente",
+      "emptyDescription": "Você não tem pedidos aguardando pagamento.",
+      "payNow": "Pagar Agora",
+      "cancel": "Cancelar",
+      "expiresIn": "Expira em {minutes} min"
+    },
+    "refunds": {
+      "empty": "Nenhum reembolso",
+      "emptyDescription": "Você não tem histórico de reembolsos.",
+      "amount": "Valor do Reembolso",
+      "reason": "Motivo",
+      "pending": "Processando"
+    },
+    "orderKind": {
+      "research": "Pesquisa",
+      "report": "Relatório"
+    },
+    "orderStatus": {
+      "pending_payment": "Aguardando Pagamento",
+      "paid": "Pago",
+      "executing": "Executando",
+      "completed": "Concluído",
+      "completed_partial": "Parcialmente Concluído",
+      "failed": "Falhou",
+      "refunded": "Reembolsado",
+      "refund_pending": "Reembolso Pendente",
+      "expired": "Expirado"
+    }
+  },
+  "checkout": {
+    "title": "Finalizar Pedido",
+    "subtitle": "Revise sua pesquisa e pague para iniciar a execução",
+    "researchSummary": "Resumo da Pesquisa",
+    "tools": "Ferramentas",
+    "estimatedResults": "Result. Est.",
+    "aiAnalysis": "Análise IA",
+    "reportType": "Tipo de Relatório",
+    "reportTypes": {
+      "none": "Sem Relatório",
+      "executive": "Executivo",
+      "professional": "Profissional",
+      "technical": "Técnico"
+    },
+    "reportDescriptions": {
+      "none": "Gere um relatório depois (pedido separado)",
+      "executive": "Resumo de alto nível para tomadores de decisão",
+      "professional": "Análise equilibrada com gráficos e recomendações",
+      "technical": "Análise estatística completa com dados brutos"
+    },
+    "priceBreakdown": "Detalhamento do Preço",
+    "breakdown": {
+      "scraping": "Coleta de Dados",
+      "aiAnalysis": "Análise IA",
+      "report": "Geração de Relatório",
+      "chatbot": "Planejamento",
+      "buffer": "Margem de Segurança",
+      "markup": "Taxa de Serviço"
+    },
+    "total": "Total",
+    "payAndExecute": "Pagar {amount} e Executar",
+    "disclaimer": "O preço é final. Sem reembolsos, exceto em caso de falha do sistema.",
+    "processing": "Criando pagamento...",
+    "success": {
+      "title": "Pagamento Recebido",
+      "description": "Sua pesquisa está em execução. Você pode acompanhar o progresso no seu projeto.",
+      "viewProject": "Ver Projeto"
+    },
+    "failure": {
+      "title": "Pagamento Falhou",
+      "description": "O pagamento não foi concluído. Você pode tentar novamente.",
+      "retry": "Tentar Novamente"
+    },
+    "pending": {
+      "title": "Pagamento Pendente",
+      "description": "Seu pagamento está sendo processado. A pesquisa começará após a confirmação.",
+      "viewProject": "Ver Projeto"
     }
   }
 }

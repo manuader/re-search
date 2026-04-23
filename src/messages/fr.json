@@ -39,23 +39,98 @@
     }
   },
   "billing": {
-    "credits": "Crédits",
-    "balance": "Crédits Disponibles",
-    "buyCredits": "Acheter des Crédits",
-    "transactionHistory": "Historique des Transactions",
-    "estimateNote": "~{count} projets de recherche",
     "title": "Facturation",
-    "paymentSuccess": "Paiement réussi ! Crédits ajoutés.",
-    "paymentFailure": "Le paiement a échoué. Veuillez réessayer.",
-    "paymentPending": "Paiement en attente. Les crédits seront ajoutés après confirmation.",
-    "customAmount": "Montant personnalisé",
-    "minAmount": "Minimum 5 $",
-    "transactionTypes": {
-      "credit_purchase": "Achat de Crédits",
-      "scraping_reserve": "Réserve de Recherche",
-      "scraping_cost": "Ajustement de Coût de Recherche",
-      "ai_cost": "Coût d'Analyse IA",
-      "refund": "Remboursement"
+    "tabs": {
+      "history": "Historique",
+      "pending": "Paiements en Attente",
+      "refunds": "Remboursements"
+    },
+    "history": {
+      "empty": "Aucune commande",
+      "emptyDescription": "Votre historique de commandes apparaîtra ici après votre première recherche.",
+      "date": "Date",
+      "project": "Projet",
+      "type": "Type",
+      "amount": "Montant",
+      "status": "Statut"
+    },
+    "pending": {
+      "empty": "Aucun paiement en attente",
+      "emptyDescription": "Vous n'avez aucune commande en attente de paiement.",
+      "payNow": "Payer Maintenant",
+      "cancel": "Annuler",
+      "expiresIn": "Expire dans {minutes} min"
+    },
+    "refunds": {
+      "empty": "Aucun remboursement",
+      "emptyDescription": "Vous n'avez aucun historique de remboursement.",
+      "amount": "Montant du Remboursement",
+      "reason": "Motif",
+      "pending": "En cours de traitement"
+    },
+    "orderKind": {
+      "research": "Recherche",
+      "report": "Rapport"
+    },
+    "orderStatus": {
+      "pending_payment": "Paiement en Attente",
+      "paid": "Payé",
+      "executing": "En Cours",
+      "completed": "Terminé",
+      "completed_partial": "Partiellement Terminé",
+      "failed": "Échoué",
+      "refunded": "Remboursé",
+      "refund_pending": "Remboursement en Attente",
+      "expired": "Expiré"
+    }
+  },
+  "checkout": {
+    "title": "Paiement",
+    "subtitle": "Vérifiez votre recherche et payez pour lancer l'exécution",
+    "researchSummary": "Résumé de la Recherche",
+    "tools": "Outils",
+    "estimatedResults": "Résultats est.",
+    "aiAnalysis": "Analyse IA",
+    "reportType": "Type de Rapport",
+    "reportTypes": {
+      "none": "Sans Rapport",
+      "executive": "Exécutif",
+      "professional": "Professionnel",
+      "technical": "Technique"
+    },
+    "reportDescriptions": {
+      "none": "Générer un rapport plus tard (commande séparée)",
+      "executive": "Résumé de haut niveau pour les décideurs",
+      "professional": "Analyse équilibrée avec graphiques et recommandations",
+      "technical": "Analyse statistique complète avec données brutes"
+    },
+    "priceBreakdown": "Détail du Prix",
+    "breakdown": {
+      "scraping": "Collecte de Données",
+      "aiAnalysis": "Analyse IA",
+      "report": "Génération du Rapport",
+      "chatbot": "Planification",
+      "buffer": "Marge de Sécurité",
+      "markup": "Frais de Service"
+    },
+    "total": "Total",
+    "payAndExecute": "Payer {amount} et Exécuter",
+    "disclaimer": "Le prix est définitif. Aucun remboursement sauf en cas de défaillance du système.",
+    "processing": "Création du paiement...",
+    "success": {
+      "title": "Paiement Reçu",
+      "description": "Votre recherche est en cours d'exécution. Vous pouvez suivre la progression dans votre projet.",
+      "viewProject": "Voir le Projet"
+    },
+    "failure": {
+      "title": "Paiement Échoué",
+      "description": "Le paiement n'a pas abouti. Vous pouvez réessayer.",
+      "retry": "Réessayer"
+    },
+    "pending": {
+      "title": "Paiement en Attente",
+      "description": "Votre paiement est en cours de traitement. La recherche démarrera une fois confirmé.",
+      "viewProject": "Voir le Projet"
     }
   }
 }

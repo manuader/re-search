@@ -8,52 +8,46 @@ import {
   findToolById,
 } from "@/lib/apify/catalog";
 import { createClient } from "@/lib/supabase/server";
-import { inngest } from "@/lib/inngest/client";
 
 const errorMessages: Record<Locale, Record<string, string>> = {
   en: {
     toolNotFound: "Tool not found in catalog.",
-    insufficientCredits: "Insufficient credits. Please purchase more credits to continue.",
     noToolsProvided: "No tools were provided for execution.",
     projectUpdateFailed: "Failed to update the project. Please try again.",
     generic: "An error occurred. Please try again.",
   },
   es: {
-    toolNotFound: "Herramienta no encontrada en el catálogo.",
-    insufficientCredits: "Créditos insuficientes. Por favor comprá más créditos para continuar.",
+    toolNotFound: "Herramienta no encontrada en el catalogo.",
     noToolsProvided: "No se proporcionaron herramientas para ejecutar.",
-    projectUpdateFailed: "Error al actualizar el proyecto. Por favor intentá de nuevo.",
-    generic: "Ocurrió un error. Por favor intentá de nuevo.",
+    projectUpdateFailed: "Error al actualizar el proyecto. Por favor intenta de nuevo.",
+    generic: "Ocurrio un error. Por favor intenta de nuevo.",
   },
   pt: {
-    toolNotFound: "Ferramenta não encontrada no catálogo.",
-    insufficientCredits: "Créditos insuficientes. Por favor, compre mais créditos para continuar.",
-    noToolsProvided: "Nenhuma ferramenta foi fornecida para execução.",
+    toolNotFound: "Ferramenta nao encontrada no catalogo.",
+    noToolsProvided: "Nenhuma ferramenta foi fornecida para execucao.",
     projectUpdateFailed: "Falha ao atualizar o projeto. Tente novamente.",
     generic: "Ocorreu um erro. Tente novamente.",
   },
   fr: {
     toolNotFound: "Outil introuvable dans le catalogue.",
-    insufficientCredits: "Crédits insuffisants. Veuillez acheter plus de crédits pour continuer.",
-    noToolsProvided: "Aucun outil n'a été fourni pour l'exécution.",
-    projectUpdateFailed: "Échec de la mise à jour du projet. Veuillez réessayer.",
-    generic: "Une erreur est survenue. Veuillez réessayer.",
+    noToolsProvided: "Aucun outil n'a ete fourni pour l'execution.",
+    projectUpdateFailed: "Echec de la mise a jour du projet. Veuillez reessayer.",
+    generic: "Une erreur est survenue. Veuillez reessayer.",
   },
   de: {
     toolNotFound: "Werkzeug nicht im Katalog gefunden.",
-    insufficientCredits: "Nicht genügend Guthaben. Bitte kaufen Sie mehr Guthaben.",
-    noToolsProvided: "Keine Werkzeuge zur Ausführung angegeben.",
+    noToolsProvided: "Keine Werkzeuge zur Ausfuhrung angegeben.",
     projectUpdateFailed: "Projekt konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.",
     generic: "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
   },
 };
 
-const successMessages: Record<Locale, (cost: string) => string> = {
-  en: (c) => `Research started! Estimated cost: $${c}. You can track progress in real time.`,
-  es: (c) => `Investigacion iniciada! Costo estimado: $${c}. Podes seguir el progreso en tiempo real.`,
-  pt: (c) => `Pesquisa iniciada! Custo estimado: $${c}. Você pode acompanhar o progresso em tempo real.`,
-  fr: (c) => `Recherche lancée ! Coût estimé : ${c} $. Vous pouvez suivre la progression en temps réel.`,
-  de: (c) => `Forschung gestartet! Geschätzte Kosten: ${c} $. Sie können den Fortschritt in Echtzeit verfolgen.`,
+const checkoutMessages: Record<Locale, (cost: string) => string> = {
+  en: (c) => `Your research is ready! Estimated price: $${c}. Please proceed to checkout to pay and start execution.`,
+  es: (c) => `Tu investigacion esta lista! Precio estimado: $${c}. Procede al checkout para pagar e iniciar la ejecucion.`,
+  pt: (c) => `Sua pesquisa esta pronta! Preco estimado: $${c}. Prossiga para o checkout para pagar e iniciar a execucao.`,
+  fr: (c) => `Votre recherche est prete ! Prix estime : ${c} $. Procedez au paiement pour lancer l'execution.`,
+  de: (c) => `Ihre Forschung ist bereit! Geschatzter Preis: ${c} $. Fahren Sie mit der Zahlung fort, um die Ausfuhrung zu starten.`,
 };
 
 export function createChatTools(
@@ -76,7 +70,6 @@ export function createChatTools(
           return { results: [] };
         }
 
-        // Enrich with health status from DB
         const supabase = await createClient();
         const toolIds = results.map((r) => r.id);
 
@@ -170,7 +163,6 @@ export function createChatTools(
           description: Record<string, string>;
         }[] = [];
 
-        // Sentiment analysis for reviews and social posts
         if (
           dt.includes("review") ||
           dt.includes("post") ||
@@ -185,7 +177,6 @@ export function createChatTools(
           });
         }
 
-        // Pain points for reviews
         if (dt.includes("review") || dt.includes("feedback")) {
           suggestions.push({
             type: "pain_points",
@@ -196,16 +187,14 @@ export function createChatTools(
           });
         }
 
-        // Classification for all data types
         suggestions.push({
           type: "classification",
           description: {
             en: "Automatically categorize results into meaningful groups",
-            es: "Categorizar resultados automáticamente en grupos significativos",
+            es: "Categorizar resultados automaticamente en grupos significativos",
           },
         });
 
-        // Summary for all data types
         suggestions.push({
           type: "summary",
           description: {
@@ -227,7 +216,7 @@ export function createChatTools(
 
     executeResearch: tool({
       description:
-        "Execute the configured research (only after user confirms)",
+        "Configure the research and redirect user to checkout for payment (only after user confirms)",
       inputSchema: z.object({
         title: z.string(),
         tools: z.array(
@@ -254,53 +243,22 @@ export function createChatTools(
 
           const supabase = await createClient();
 
-          // 1. Check credit balance
-          const { data: balanceData, error: balanceError } = await supabase.rpc(
-            "get_credit_balance",
-            { p_user_id: userId }
-          );
-
-          if (balanceError) {
-            return { error: t.generic };
-          }
-
-          // Calculate total cost
-          let totalCost = 0;
-          for (const toolDef of tools) {
-            const estimate = estimateCostFromCatalog(
-              toolDef.toolId,
-              toolDef.estimatedResults
-            );
-            if (estimate) {
-              totalCost += estimate.expected;
-            }
-          }
-
-          const balance = (balanceData as number) ?? 0;
-          if (balance < totalCost) {
-            return {
-              error: t.insufficientCredits,
-              required: totalCost,
-              available: balance,
-            };
-          }
-
-          // 2. Update project with title and status
+          // 1. Update project with title and status
           const { error: projectError } = await supabase
             .from("research_projects")
             .update({
               title,
-              status: "running",
+              status: "configured",
             })
             .eq("id", projectId)
             .eq("user_id", userId);
 
           if (projectError) {
             console.error("[executeResearch] project update error:", JSON.stringify(projectError));
-            return { error: `DB error (project): ${projectError.message}` };
+            return { error: t.projectUpdateFailed };
           }
 
-          // 3. Create scraping jobs
+          // 2. Create scraping jobs
           const scrapingJobs = tools.map((entry) => {
             const catalogEntry = findToolById(entry.toolId);
             return {
@@ -319,10 +277,10 @@ export function createChatTools(
 
           if (jobsError) {
             console.error("[executeResearch] scraping_jobs insert error:", JSON.stringify(jobsError));
-            return { error: `DB error (jobs): ${jobsError.message}` };
+            return { error: t.generic };
           }
 
-          // 4. Create AI analysis configs if provided
+          // 3. Create AI analysis configs if provided
           if (aiAnalysis && aiAnalysis.length > 0) {
             const analysisConfigs = aiAnalysis.map((a) => ({
               project_id: projectId,
@@ -334,61 +292,32 @@ export function createChatTools(
             const { error: aiError } = await supabase
               .from("ai_analysis_configs")
               .insert(analysisConfigs);
+
             if (aiError) {
               console.error("[executeResearch] ai_analysis_configs insert error:", JSON.stringify(aiError));
             }
           }
 
-          // 5. Reserve credits via negative transaction
-          const { error: txError } = await supabase
-            .from("transactions")
-            .insert({
-              user_id: userId,
-              amount: -totalCost,
-              type: "scraping_reserve",
-              project_id: projectId,
-              description: `Credit reserve for project: ${title}`,
-            });
-
-          if (txError) {
-            console.error("[executeResearch] transaction insert error:", JSON.stringify(txError));
-            return { error: `DB error (tx): ${txError.message}` };
+          // 4. Calculate estimated price for display
+          let totalEstimatedCost = 0;
+          for (const toolDef of tools) {
+            const estimate = estimateCostFromCatalog(toolDef.toolId, toolDef.estimatedResults);
+            if (estimate) totalEstimatedCost += estimate.expected;
           }
 
-          // Dispatch Inngest event to start scraping pipeline
-          try {
-            const sendResult = await inngest.send({
-              name: "research/execute",
-              data: { projectId },
-            });
-            console.log("[executeResearch] Inngest event sent:", JSON.stringify(sendResult));
-          } catch (inngestErr) {
-            console.error("[executeResearch] Inngest send failed:", inngestErr);
-            return {
-              error: `Failed to start research pipeline: ${inngestErr instanceof Error ? inngestErr.message : String(inngestErr)}`,
-            };
-          }
+          const costFormatted = totalEstimatedCost.toFixed(2);
+          const message = checkoutMessages[locale](costFormatted);
 
-          // Update project status to 'running'
-          await supabase
-            .from("research_projects")
-            .update({ status: "running" })
-            .eq("id", projectId);
-
-          const costFormatted = totalCost.toFixed(2);
-          const successMessage = successMessages[locale](costFormatted);
-
+          // 5. Redirect to checkout (no balance check, no credit reservation)
           return {
             success: true,
+            action: "redirect_checkout",
+            url: `/${locale}/projects/${projectId}/checkout`,
             projectId,
-            status: "running",
-            jobsCreated: tools.length,
-            totalEstimatedCost: totalCost,
-            creditBalance: balance - totalCost,
-            message: successMessage,
+            message,
           };
         } catch {
-          return { error: errorMessages[locale].generic };
+          return { error: t.generic };
         }
       },
     }),

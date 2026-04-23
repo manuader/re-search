@@ -39,23 +39,98 @@
     }
   },
   "billing": {
-    "credits": "Guthaben",
-    "balance": "Verfügbares Guthaben",
-    "buyCredits": "Guthaben kaufen",
-    "transactionHistory": "Transaktionsverlauf",
-    "estimateNote": "~{count} Forschungsprojekte",
     "title": "Abrechnung",
-    "paymentSuccess": "Zahlung erfolgreich! Guthaben hinzugefügt.",
-    "paymentFailure": "Zahlung fehlgeschlagen. Bitte versuchen Sie es erneut.",
-    "paymentPending": "Zahlung ausstehend. Guthaben wird nach Bestätigung hinzugefügt.",
-    "customAmount": "Benutzerdefinierter Betrag",
-    "minAmount": "Mindestens 5 $",
-    "transactionTypes": {
-      "credit_purchase": "Guthaben-Kauf",
-      "scraping_reserve": "Forschungsreserve",
-      "scraping_cost": "Forschungskosten-Anpassung",
-      "ai_cost": "KI-Analysekosten",
-      "refund": "Rückerstattung"
+    "tabs": {
+      "history": "Verlauf",
+      "pending": "Ausstehende Zahlungen",
+      "refunds": "Rückerstattungen"
+    },
+    "history": {
+      "empty": "Noch keine Bestellungen",
+      "emptyDescription": "Ihr Bestellverlauf erscheint hier nach Ihrer ersten Recherche.",
+      "date": "Datum",
+      "project": "Projekt",
+      "type": "Typ",
+      "amount": "Betrag",
+      "status": "Status"
+    },
+    "pending": {
+      "empty": "Keine ausstehenden Zahlungen",
+      "emptyDescription": "Sie haben keine Bestellungen, die auf Zahlung warten.",
+      "payNow": "Jetzt Bezahlen",
+      "cancel": "Abbrechen",
+      "expiresIn": "Läuft ab in {minutes} Min."
+    },
+    "refunds": {
+      "empty": "Keine Rückerstattungen",
+      "emptyDescription": "Sie haben keinen Rückerstattungsverlauf.",
+      "amount": "Rückerstattungsbetrag",
+      "reason": "Grund",
+      "pending": "In Bearbeitung"
+    },
+    "orderKind": {
+      "research": "Recherche",
+      "report": "Bericht"
+    },
+    "orderStatus": {
+      "pending_payment": "Zahlung Ausstehend",
+      "paid": "Bezahlt",
+      "executing": "Wird Ausgeführt",
+      "completed": "Abgeschlossen",
+      "completed_partial": "Teilweise Abgeschlossen",
+      "failed": "Fehlgeschlagen",
+      "refunded": "Erstattet",
+      "refund_pending": "Erstattung Ausstehend",
+      "expired": "Abgelaufen"
+    }
+  },
+  "checkout": {
+    "title": "Kasse",
+    "subtitle": "Überprüfen Sie Ihre Recherche und bezahlen Sie, um die Ausführung zu starten",
+    "researchSummary": "Recherche-Zusammenfassung",
+    "tools": "Werkzeuge",
+    "estimatedResults": "Gesch. Ergebnisse",
+    "aiAnalysis": "KI-Analyse",
+    "reportType": "Berichtstyp",
+    "reportTypes": {
+      "none": "Kein Bericht",
+      "executive": "Leitungsebene",
+      "professional": "Professionell",
+      "technical": "Technisch"
+    },
+    "reportDescriptions": {
+      "none": "Bericht später erstellen (separate Bestellung)",
+      "executive": "Überblick auf hoher Ebene für Entscheidungsträger",
+      "professional": "Ausgewogene Analyse mit Diagrammen und Empfehlungen",
+      "technical": "Vollständige statistische Tiefenanalyse mit Rohdaten"
+    },
+    "priceBreakdown": "Preisaufschlüsselung",
+    "breakdown": {
+      "scraping": "Datenerhebung",
+      "aiAnalysis": "KI-Analyse",
+      "report": "Berichtserstellung",
+      "chatbot": "Planung",
+      "buffer": "Sicherheitspuffer",
+      "markup": "Servicegebühr"
+    },
+    "total": "Gesamt",
+    "payAndExecute": "{amount} Bezahlen und Ausführen",
+    "disclaimer": "Der Preis ist endgültig. Keine Rückerstattungen außer bei Systemausfall.",
+    "processing": "Zahlung wird erstellt...",
+    "success": {
+      "title": "Zahlung Erhalten",
+      "description": "Ihre Recherche wird ausgeführt. Sie können den Fortschritt in Ihrem Projekt verfolgen.",
+      "viewProject": "Projekt Ansehen"
+    },
+    "failure": {
+      "title": "Zahlung Fehlgeschlagen",
+      "description": "Die Zahlung wurde nicht abgeschlossen. Sie können es erneut versuchen.",
+      "retry": "Erneut Versuchen"
+    },
+    "pending": {
+      "title": "Zahlung Ausstehend",
+      "description": "Ihre Zahlung wird bearbeitet. Die Recherche startet nach der Bestätigung.",
+      "viewProject": "Projekt Ansehen"
     }
   }
 }

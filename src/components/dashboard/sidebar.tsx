@@ -36,7 +36,6 @@ interface Project {
 }
 
 interface SidebarProps {
-  creditBalance: number;
   projects: Project[];
   userEmail: string;
 }
@@ -49,7 +48,7 @@ const STATUS_EMOJI: Record<string, string> = {
   failed: "❌",
 };
 
-export function Sidebar({ creditBalance, projects, userEmail }: SidebarProps) {
+export function Sidebar({ projects, userEmail }: SidebarProps) {
   const t = useTranslations();
   const locale = useLocale();
   const router = useRouter();
@@ -150,10 +149,6 @@ export function Sidebar({ creditBalance, projects, userEmail }: SidebarProps) {
 
       <Separator className="my-2" />
 
-      <div className="px-2 text-xs text-muted-foreground mb-2">
-        {t("billing.credits")}: ${creditBalance.toFixed(2)}
-      </div>
-
       <DropdownMenu>
         <DropdownMenuTrigger className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-muted transition-colors">
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">
@@ -163,7 +158,7 @@ export function Sidebar({ creditBalance, projects, userEmail }: SidebarProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" side="top" className="w-56">
           <DropdownMenuItem onClick={() => router.push(`/${locale}/billing`)}>
-            {t("billing.credits")}
+            {t("billing.title")}
           </DropdownMenuItem>
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
