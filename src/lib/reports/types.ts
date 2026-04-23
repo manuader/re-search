@@ -51,7 +51,7 @@ export interface BuildSummaryInput {
   source: SourceType;
   userBrief: string;
   enrichments: EnrichmentFlags;
-  locale: "en" | "es";
+  locale: string;
 }
 
 // ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-export type Locale = "en" | "es";
+export type Locale = "en" | "es" | "pt" | "fr" | "de";
 
 export type ToolCategory =
   | "maps"
@@ -14,8 +14,8 @@ export type ToolFieldType = "string" | "number" | "boolean" | "string[]";
 export interface ToolField {
   key: string;
   type: ToolFieldType;
-  label: Record<Locale, string>;
-  description: Record<Locale, string>;
+  label: Record<string, string>;
+  description: Record<string, string>;
   required: boolean;
   default?: string | number | boolean | string[];
   userFacing: boolean;
@@ -43,8 +43,8 @@ export interface ToolValidation {
 export interface ToolCatalogEntry {
   id: string;
   actorId: string;
-  name: Record<Locale, string>;
-  description: Record<Locale, string>;
+  name: Record<string, string>;
+  description: Record<string, string>;
   category: ToolCategory;
   useCases: string[];
   inputSchema: {

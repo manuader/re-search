@@ -12,10 +12,21 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+
+const LANGUAGES = [
+  { code: "en", label: "English", flag: "🇺🇸" },
+  { code: "es", label: "Español", flag: "🇪🇸" },
+  { code: "pt", label: "Português", flag: "🇧🇷" },
+  { code: "fr", label: "Français", flag: "🇫🇷" },
+  { code: "de", label: "Deutsch", flag: "🇩🇪" },
+] as const;
 
 interface Project {
   id: string;
@@ -46,12 +57,13 @@ export function Sidebar({ creditBalance, projects, userEmail }: SidebarProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
 
-  async function handleSwitchLocale() {
-    const newLocale = locale === "en" ? "es" : "en";
-    // Save to profile
+  async function handleSwitchLocale(newLocale: string) {
+    if (newLocale === locale) return;
     const supabase = createClient();
-    await supabase.from("profiles").update({ locale: newLocale }).eq("id", (await supabase.auth.getUser()).data.user?.id ?? "");
-    // Navigate to same path with new locale prefix
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (authUser) {
+      await supabase.from("profiles").update({ locale: newLocale }).eq("id", authUser.id);
+    }
     const newPath = pathname.replace(`/${locale}`, `/${newLocale}`);
     router.push(newPath);
     router.refresh();
@@ -153,9 +165,23 @@ export function Sidebar({ creditBalance, projects, userEmail }: SidebarProps) {
           <DropdownMenuItem onClick={() => router.push(`/${locale}/billing`)}>
             {t("billing.credits")}
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleSwitchLocale}>
-            {locale === "en" ? "Cambiar a Español" : "Switch to English"}
-          </DropdownMenuItem>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              {LANGUAGES.find((l) => l.code === locale)?.flag ?? "🌐"}{" "}
+              {LANGUAGES.find((l) => l.code === locale)?.label ?? "Language"}
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              {LANGUAGES.map((lang) => (
+                <DropdownMenuItem
+                  key={lang.code}
+                  onClick={() => handleSwitchLocale(lang.code)}
+                >
+                  {lang.flag} {lang.label}
+                  {lang.code === locale && " ✓"}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={async () => {

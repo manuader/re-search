@@ -87,13 +87,17 @@ const SOURCE_GUIDANCE: Record<SourceType, string> = {
 export function buildReportPrompt(
   summary: DatasetSummary,
   projectTitle: string,
-  locale: "en" | "es"
+  locale: string
 ): { system: string; user: string } {
   const sourceGuidance = SOURCE_GUIDANCE[summary.meta.source] ?? SOURCE_GUIDANCE.generic;
-  const localeLabel =
-    locale === "es"
-      ? 'Spanish (Latin American / rioplatense-friendly, avoid Spain-isms like "vale" or "mola")'
-      : "English";
+  const LOCALE_LABELS: Record<string, string> = {
+    en: "English",
+    es: 'Spanish (Latin American / rioplatense-friendly, avoid Spain-isms like "vale" or "mola")',
+    pt: "Brazilian Portuguese",
+    fr: "French",
+    de: "German",
+  };
+  const localeLabel = LOCALE_LABELS[locale] ?? "English";
 
   const system = `You are an elite hybrid: senior data analyst + frontend engineer. Your job is to turn a pre-computed research dataset summary into a COMPLETE, self-contained, interactive HTML report that surfaces non-obvious, quantified, actionable intelligence — tailored to the user's specific research objective. Generic is failure. Every section must justify its existence with a number.
 

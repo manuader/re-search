@@ -51,18 +51,18 @@ import { filterStopWords } from "./stop-words";
 // ---------------------------------------------------------------------------
 
 const ENRICHMENT_PATTERNS: Record<string, RegExp> = {
-  sentiment: /sentimiento|sentiment|opini[oó]n|feeling/i,
-  categories: /categor[ií]a|classification|classify|tema|topic/i,
-  painPoints: /pain\s*point|problema|complaint|queja|dolor/i,
+  sentiment: /sentimiento|sentiment|opini[oó]n|feeling|sentimento|avis|Stimmung|Meinung/i,
+  categories: /categor[ií]a|classification|classify|tema|topic|catégorie|Kategorie|Thema/i,
+  painPoints: /pain\s*point|problema|complaint|queja|dolor|problema|plainte|Beschwerde|Schmerz/i,
   demographics:
-    /demogr[aá]fi|clase\s*social|socioeconomi|income|edad|age|rango\s*etario/i,
-  geo: /ubicaci[oó]n|lugar|location|pa[ií]s|ciudad|city|provincia|geo/i,
-  gender: /g[eé]nero|gender|sexo/i,
+    /demogr[aá]fi|clase\s*social|socioeconomi|income|edad|age|rango\s*etario|idade|âge|Alter/i,
+  geo: /ubicaci[oó]n|lugar|location|pa[ií]s|ciudad|city|provincia|geo|localização|lieu|ville|Standort|Stadt/i,
+  gender: /g[eé]nero|gender|sexo|gênero|genre|Geschlecht/i,
 };
 
 export function detectRequestedFields(
   brief: string,
-  _locale: "en" | "es"
+  _locale: string
 ): string[] {
   const found: string[] = [];
   for (const [key, pattern] of Object.entries(ENRICHMENT_PATTERNS)) {

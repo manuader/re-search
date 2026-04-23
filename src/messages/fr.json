@@ -1,0 +1,61 @@
+{
+  "common": {
+    "appName": "ResearchBot",
+    "loading": "Chargement...",
+    "error": "Une erreur est survenue",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "back": "Retour"
+  },
+  "auth": {
+    "login": "Se connecter",
+    "signup": "S'inscrire",
+    "logout": "Se déconnecter",
+    "email": "Email",
+    "password": "Mot de passe",
+    "continueWithGoogle": "Continuer avec Google",
+    "orContinueWith": "Ou continuer avec",
+    "noAccount": "Pas de compte ?",
+    "hasAccount": "Déjà un compte ?"
+  },
+  "dashboard": {
+    "title": "Mes Recherches",
+    "newResearch": "Nouvelle Recherche",
+    "recentProjects": "Projets Récents",
+    "emptyState": "Commencez une nouvelle recherche",
+    "emptyStateDescription": "Décrivez ce que vous voulez étudier et je vous guide dans le processus"
+  },
+  "project": {
+    "chat": "Chat",
+    "data": "Données",
+    "report": "Rapport",
+    "status": {
+      "draft": "Brouillon",
+      "configured": "Configuré",
+      "running": "En cours",
+      "completed": "Terminé",
+      "failed": "Échoué"
+    }
+  },
+  "billing": {
+    "credits": "Crédits",
+    "balance": "Crédits Disponibles",
+    "buyCredits": "Acheter des Crédits",
+    "transactionHistory": "Historique des Transactions",
+    "estimateNote": "~{count} projets de recherche",
+    "title": "Facturation",
+    "paymentSuccess": "Paiement réussi ! Crédits ajoutés.",
+    "paymentFailure": "Le paiement a échoué. Veuillez réessayer.",
+    "paymentPending": "Paiement en attente. Les crédits seront ajoutés après confirmation.",
+    "customAmount": "Montant personnalisé",
+    "minAmount": "Minimum 5 $",
+    "transactionTypes": {
+      "credit_purchase": "Achat de Crédits",
+      "scraping_reserve": "Réserve de Recherche",
+      "scraping_cost": "Ajustement de Coût de Recherche",
+      "ai_cost": "Coût d'Analyse IA",
+      "refund": "Remboursement"
+    }
+  }
+}

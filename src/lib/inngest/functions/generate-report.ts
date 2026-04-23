@@ -14,7 +14,7 @@ type ReportGenerateEvent = {
   data: {
     projectId: string;
     userId: string;
-    locale: "en" | "es";
+    locale: string;
   };
 };
 

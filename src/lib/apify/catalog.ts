@@ -1437,20 +1437,28 @@ export function findToolById(id: string): ToolCatalogEntry | undefined {
   return toolCatalog.find((t) => t.id === id);
 }
 
+// Locale fallback: catalog only has en/es, other locales fall back to en
+function locName(entry: { name: Record<string, string> }, locale: Locale): string {
+  return entry.name[locale] ?? entry.name.en;
+}
+function locDesc(entry: { description: Record<string, string> }, locale: Locale): string {
+  return entry.description[locale] ?? entry.description.en;
+}
+
 export function searchCatalog(query: string, locale: Locale): ToolSearchResult[] {
   const q = query.toLowerCase();
   return toolCatalog
     .filter(
       (t) =>
-        t.name[locale].toLowerCase().includes(q) ||
-        t.description[locale].toLowerCase().includes(q) ||
+        locName(t, locale).toLowerCase().includes(q) ||
+        locDesc(t, locale).toLowerCase().includes(q) ||
         t.useCases.some((uc) => uc.toLowerCase().includes(q)) ||
         t.category.includes(q)
     )
     .map((t) => ({
       id: t.id,
-      name: t.name[locale],
-      description: t.description[locale],
+      name: locName(t, locale),
+      description: locDesc(t, locale),
       category: t.category,
       healthStatus: "unknown",
       costPer1000: t.pricing.costPer1000,
@@ -1467,13 +1475,13 @@ export function getToolConfig(
 
   return {
     toolId: tool.id,
-    toolName: tool.name[locale],
+    toolName: locName(tool, locale),
     fields: tool.inputSchema.fields
       .filter((f) => f.userFacing)
       .map((f) => ({
         key: f.key,
-        label: f.label[locale],
-        description: f.description[locale],
+        label: f.label[locale] ?? f.label.en,
+        description: f.description[locale] ?? f.description.en,
         type: f.type,
         required: f.required,
         default: f.default,

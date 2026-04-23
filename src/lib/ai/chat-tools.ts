@@ -13,21 +13,47 @@ import { inngest } from "@/lib/inngest/client";
 const errorMessages: Record<Locale, Record<string, string>> = {
   en: {
     toolNotFound: "Tool not found in catalog.",
-    insufficientCredits:
-      "Insufficient credits. Please purchase more credits to continue.",
+    insufficientCredits: "Insufficient credits. Please purchase more credits to continue.",
     noToolsProvided: "No tools were provided for execution.",
     projectUpdateFailed: "Failed to update the project. Please try again.",
     generic: "An error occurred. Please try again.",
   },
   es: {
     toolNotFound: "Herramienta no encontrada en el catálogo.",
-    insufficientCredits:
-      "Créditos insuficientes. Por favor comprá más créditos para continuar.",
+    insufficientCredits: "Créditos insuficientes. Por favor comprá más créditos para continuar.",
     noToolsProvided: "No se proporcionaron herramientas para ejecutar.",
-    projectUpdateFailed:
-      "Error al actualizar el proyecto. Por favor intentá de nuevo.",
+    projectUpdateFailed: "Error al actualizar el proyecto. Por favor intentá de nuevo.",
     generic: "Ocurrió un error. Por favor intentá de nuevo.",
   },
+  pt: {
+    toolNotFound: "Ferramenta não encontrada no catálogo.",
+    insufficientCredits: "Créditos insuficientes. Por favor, compre mais créditos para continuar.",
+    noToolsProvided: "Nenhuma ferramenta foi fornecida para execução.",
+    projectUpdateFailed: "Falha ao atualizar o projeto. Tente novamente.",
+    generic: "Ocorreu um erro. Tente novamente.",
+  },
+  fr: {
+    toolNotFound: "Outil introuvable dans le catalogue.",
+    insufficientCredits: "Crédits insuffisants. Veuillez acheter plus de crédits pour continuer.",
+    noToolsProvided: "Aucun outil n'a été fourni pour l'exécution.",
+    projectUpdateFailed: "Échec de la mise à jour du projet. Veuillez réessayer.",
+    generic: "Une erreur est survenue. Veuillez réessayer.",
+  },
+  de: {
+    toolNotFound: "Werkzeug nicht im Katalog gefunden.",
+    insufficientCredits: "Nicht genügend Guthaben. Bitte kaufen Sie mehr Guthaben.",
+    noToolsProvided: "Keine Werkzeuge zur Ausführung angegeben.",
+    projectUpdateFailed: "Projekt konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.",
+    generic: "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
+  },
+};
+
+const successMessages: Record<Locale, (cost: string) => string> = {
+  en: (c) => `Research started! Estimated cost: $${c}. You can track progress in real time.`,
+  es: (c) => `Investigacion iniciada! Costo estimado: $${c}. Podes seguir el progreso en tiempo real.`,
+  pt: (c) => `Pesquisa iniciada! Custo estimado: $${c}. Você pode acompanhar o progresso em tempo real.`,
+  fr: (c) => `Recherche lancée ! Coût estimé : ${c} $. Vous pouvez suivre la progression en temps réel.`,
+  de: (c) => `Forschung gestartet! Geschätzte Kosten: ${c} $. Sie können den Fortschritt in Echtzeit verfolgen.`,
 };
 
 export function createChatTools(
@@ -119,7 +145,7 @@ export function createChatTools(
         const estimate = estimateCostFromCatalog(toolId, totalResults);
         return {
           toolId,
-          toolName: entry?.name[locale] ?? toolId,
+          toolName: (entry?.name[locale] ?? entry?.name.en) ?? toolId,
           keywords,
           resultsPerKeyword,
           costPerKeyword: estimate
@@ -141,7 +167,7 @@ export function createChatTools(
         const dt = dataType.toLowerCase();
         const suggestions: {
           type: string;
-          description: Record<Locale, string>;
+          description: Record<string, string>;
         }[] = [];
 
         // Sentiment analysis for reviews and social posts
@@ -193,7 +219,7 @@ export function createChatTools(
           dataType,
           suggestions: suggestions.map((s) => ({
             type: s.type,
-            description: s.description[locale],
+            description: s.description[locale] ?? s.description.en,
           })),
         };
       },
@@ -350,10 +376,7 @@ export function createChatTools(
             .eq("id", projectId);
 
           const costFormatted = totalCost.toFixed(2);
-          const successMessage =
-            locale === "es"
-              ? `Investigacion iniciada! Costo estimado: $${costFormatted}. Podes seguir el progreso en tiempo real.`
-              : `Research started! Estimated cost: $${costFormatted}. You can track progress in real time.`;
+          const successMessage = successMessages[locale](costFormatted);
 
           return {
             success: true,

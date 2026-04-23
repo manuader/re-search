@@ -1,0 +1,61 @@
+{
+  "common": {
+    "appName": "ResearchBot",
+    "loading": "Wird geladen...",
+    "error": "Etwas ist schiefgelaufen",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "confirm": "Bestätigen",
+    "back": "Zurück"
+  },
+  "auth": {
+    "login": "Anmelden",
+    "signup": "Registrieren",
+    "logout": "Abmelden",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "continueWithGoogle": "Mit Google fortfahren",
+    "orContinueWith": "Oder fortfahren mit",
+    "noAccount": "Kein Konto?",
+    "hasAccount": "Bereits ein Konto?"
+  },
+  "dashboard": {
+    "title": "Meine Forschung",
+    "newResearch": "Neue Forschung",
+    "recentProjects": "Aktuelle Projekte",
+    "emptyState": "Starten Sie eine neue Forschung",
+    "emptyStateDescription": "Beschreiben Sie, was Sie untersuchen möchten, und ich führe Sie durch den Prozess"
+  },
+  "project": {
+    "chat": "Chat",
+    "data": "Daten",
+    "report": "Bericht",
+    "status": {
+      "draft": "Entwurf",
+      "configured": "Konfiguriert",
+      "running": "Läuft",
+      "completed": "Abgeschlossen",
+      "failed": "Fehlgeschlagen"
+    }
+  },
+  "billing": {
+    "credits": "Guthaben",
+    "balance": "Verfügbares Guthaben",
+    "buyCredits": "Guthaben kaufen",
+    "transactionHistory": "Transaktionsverlauf",
+    "estimateNote": "~{count} Forschungsprojekte",
+    "title": "Abrechnung",
+    "paymentSuccess": "Zahlung erfolgreich! Guthaben hinzugefügt.",
+    "paymentFailure": "Zahlung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "paymentPending": "Zahlung ausstehend. Guthaben wird nach Bestätigung hinzugefügt.",
+    "customAmount": "Benutzerdefinierter Betrag",
+    "minAmount": "Mindestens 5 $",
+    "transactionTypes": {
+      "credit_purchase": "Guthaben-Kauf",
+      "scraping_reserve": "Forschungsreserve",
+      "scraping_cost": "Forschungskosten-Anpassung",
+      "ai_cost": "KI-Analysekosten",
+      "refund": "Rückerstattung"
+    }
+  }
+}

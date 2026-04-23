@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Report Pipeline — Stop Words (EN + ES)
+// Report Pipeline — Stop Words (EN + ES + PT + FR + DE)
 // ---------------------------------------------------------------------------
 
 const EN = new Set([
@@ -24,14 +24,42 @@ const ES = new Set([
   "mi", "te", "tu", "sus", "ese", "esa", "estos", "estas", "unos", "unas",
 ]);
 
-export function isStopWord(word: string, locale: "en" | "es"): boolean {
+const PT = new Set([
+  "o", "a", "de", "em", "e", "que", "um", "uma", "os", "as",
+  "do", "da", "dos", "das", "por", "com", "não", "nao", "se", "ao",
+  "para", "como", "mas", "mais", "já", "ja", "ou", "foi", "este", "tem",
+  "sem", "sobre", "também", "tambem", "me", "até", "ate", "há", "ha",
+  "nos", "lhe", "muito", "ser", "está", "esta", "eu", "isso",
+  "são", "sao", "era", "tudo", "ela", "entre", "quando", "seu", "sua",
+]);
+
+const FR = new Set([
+  "le", "la", "de", "en", "et", "que", "un", "une", "les", "des",
+  "du", "par", "avec", "ne", "pas", "se", "au", "ce", "pour", "sur",
+  "comme", "mais", "plus", "ou", "est", "il", "elle", "on", "son", "sa",
+  "ses", "nous", "vous", "ils", "elles", "qui", "dans", "être", "etre",
+  "avoir", "fait", "sont", "été", "ete", "aussi", "très", "tres",
+  "bien", "tout", "cette", "ces", "aux", "leur", "leurs", "même", "meme",
+]);
+
+const DE = new Set([
+  "der", "die", "das", "und", "in", "von", "zu", "den", "mit", "ist",
+  "ein", "eine", "für", "fur", "auf", "dem", "nicht", "sich", "es",
+  "des", "auch", "als", "an", "aus", "aber", "wie", "hat", "noch",
+  "nach", "bei", "um", "war", "wird", "sind", "kann", "nur", "oder",
+  "ich", "sie", "wir", "was", "wenn", "man", "über", "uber", "so",
+  "sehr", "dann", "zum", "zur", "vom", "bis", "durch", "unter",
+]);
+
+const ALL_SETS: Record<string, Set<string>> = { en: EN, es: ES, pt: PT, fr: FR, de: DE };
+
+export function isStopWord(word: string, locale: string): boolean {
   const lower = word.toLowerCase();
-  return EN.has(lower) || (locale === "es" && ES.has(lower));
+  if (EN.has(lower)) return true;
+  const localeSet = ALL_SETS[locale];
+  return localeSet ? localeSet.has(lower) : false;
 }
 
-export function filterStopWords(
-  words: string[],
-  locale: "en" | "es"
-): string[] {
+export function filterStopWords(words: string[], locale: string): string[] {
   return words.filter((w) => !isStopWord(w, locale));
 }

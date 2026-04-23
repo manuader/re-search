@@ -24,7 +24,7 @@ export async function createCreditPreference({
       items: [
         {
           id: "credits",
-          title: locale === "es" ? "Creditos ResearchBot" : "ResearchBot Credits",
+          title: ({ es: "Créditos ResearchBot", pt: "Créditos ResearchBot", fr: "Crédits ResearchBot", de: "ResearchBot Guthaben" } as Record<string, string>)[locale] ?? "ResearchBot Credits",
           quantity: 1,
           unit_price: amount,
           currency_id: "ARS",

@@ -10,7 +10,7 @@ const publicRoutes = ["/login", "/signup", "/auth/callback"];
 
 function isPublicRoute(pathname: string): boolean {
   // Strip locale prefix to check route
-  const pathWithoutLocale = pathname.replace(/^\/(en|es)/, "") || "/";
+  const pathWithoutLocale = pathname.replace(/^\/(en|es|pt|fr|de)/, "") || "/";
   return publicRoutes.some((route) => pathWithoutLocale.startsWith(route));
 }
 

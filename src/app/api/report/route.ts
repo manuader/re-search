@@ -42,7 +42,7 @@ export async function POST(req: Request) {
     .select("locale")
     .eq("id", user.id)
     .single();
-  const locale = (profile?.locale ?? "en") as "en" | "es";
+  const locale = profile?.locale ?? "en";
 
   // Dispatch to Inngest (returns immediately)
   await inngest.send({

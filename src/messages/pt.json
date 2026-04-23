@@ -1,0 +1,61 @@
+{
+  "common": {
+    "appName": "ResearchBot",
+    "loading": "Carregando...",
+    "error": "Algo deu errado",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "back": "Voltar"
+  },
+  "auth": {
+    "login": "Entrar",
+    "signup": "Cadastrar",
+    "logout": "Sair",
+    "email": "Email",
+    "password": "Senha",
+    "continueWithGoogle": "Continuar com Google",
+    "orContinueWith": "Ou continuar com",
+    "noAccount": "Não tem conta?",
+    "hasAccount": "Já tem conta?"
+  },
+  "dashboard": {
+    "title": "Minhas Pesquisas",
+    "newResearch": "Nova Pesquisa",
+    "recentProjects": "Projetos Recentes",
+    "emptyState": "Comece uma nova pesquisa",
+    "emptyStateDescription": "Descreva o que você quer investigar e eu te guio no processo"
+  },
+  "project": {
+    "chat": "Chat",
+    "data": "Dados",
+    "report": "Relatório",
+    "status": {
+      "draft": "Rascunho",
+      "configured": "Configurado",
+      "running": "Executando",
+      "completed": "Concluído",
+      "failed": "Falhou"
+    }
+  },
+  "billing": {
+    "credits": "Créditos",
+    "balance": "Créditos Disponíveis",
+    "buyCredits": "Comprar Créditos",
+    "transactionHistory": "Histórico de Transações",
+    "estimateNote": "~{count} projetos de pesquisa",
+    "title": "Faturamento",
+    "paymentSuccess": "Pagamento realizado! Créditos adicionados.",
+    "paymentFailure": "Pagamento falhou. Tente novamente.",
+    "paymentPending": "Pagamento pendente. Créditos serão adicionados após confirmação.",
+    "customAmount": "Valor personalizado",
+    "minAmount": "Mínimo $5",
+    "transactionTypes": {
+      "credit_purchase": "Compra de Créditos",
+      "scraping_reserve": "Reserva de Pesquisa",
+      "scraping_cost": "Ajuste de Custo de Pesquisa",
+      "ai_cost": "Custo de Análise IA",
+      "refund": "Reembolso"
+    }
+  }
+}
