@@ -2,7 +2,7 @@
 // Report Pipeline — LLM Prompt Builder
 // ---------------------------------------------------------------------------
 
-import type { DatasetSummary, SourceType } from "./types";
+import type { DatasetSummary, SourceType, ReportLevel } from "./types";
 
 // ---------------------------------------------------------------------------
 // Source-specific guidance
@@ -84,12 +84,65 @@ const SOURCE_GUIDANCE: Record<SourceType, string> = {
 // Build prompt
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Report level tone/depth modifiers
+// ---------------------------------------------------------------------------
+
+const LEVEL_INSTRUCTIONS: Record<ReportLevel, string> = {
+  executive: `================================================================
+REPORT LEVEL: EXECUTIVE SUMMARY
+================================================================
+
+This report targets C-suite executives and non-technical stakeholders. Rules:
+
+- TONE: Clear, direct, business-oriented. Zero jargon. No statistical terminology (no "standard deviation", "gini coefficient", "percentile"). Translate every stat into plain business language.
+- LENGTH: Concise. 3-4 tabs maximum: Overview, Key Findings, Recommendations, Methodology.
+- CHARTS: Maximum 4-5 charts. Prefer simple bar charts, doughnut charts, and KPI cards. No scatter plots, no radar charts, no complex multi-axis charts.
+- INSIGHTS: Frame every finding as a business decision or risk. "X means you should Y" format.
+- NUMBERS: Use round numbers when possible (48% not 47.83%). Show totals and percentages, avoid raw statistical measures.
+- KPI CARDS: Big, bold numbers with one-line explanations. Maximum 4-6 KPIs on overview.
+- RECOMMENDATIONS: Lead with this — what should the reader DO? Each recommendation = 1 sentence + 1 supporting number.
+- SKIP: Correlations section, detailed percentile breakdowns, methodology formulas, engagement quartile analysis. Keep methodology tab minimal (just sources + N + date range).`,
+
+  professional: `================================================================
+REPORT LEVEL: PROFESSIONAL ANALYSIS
+================================================================
+
+This report targets analysts, product managers, and informed stakeholders. Rules:
+
+- TONE: Professional but accessible. Use statistical terms where they add precision, but always explain what they mean in context.
+- LENGTH: Full report. 5-8 tabs covering all available data dimensions.
+- CHARTS: At least 7 charts of different types. Include distribution charts, time series, comparisons, and correlations where data supports them.
+- INSIGHTS: Minimum 8 quantified, non-trivial insights. Template: [Number] + [comparison] + [implication].
+- NUMBERS: Show precise values with context (mean, median, key percentiles). Include weighted vs unweighted comparisons.
+- RECOMMENDATIONS: 4-7 items, prioritized P1/P2/P3, each citing a specific metric.
+- INCLUDE: Engagement distribution, sentiment analysis, temporal patterns, segmentation, top items table, and methodology with weighting formulas.`,
+
+  technical: `================================================================
+REPORT LEVEL: TECHNICAL / STATISTICAL DEEP-DIVE
+================================================================
+
+This report targets data scientists, researchers, and technical analysts. Rules:
+
+- TONE: Academic and precise. Use full statistical terminology without simplification. Include confidence caveats and methodological notes inline.
+- LENGTH: Comprehensive. 7-9 tabs. Include every data dimension available. Add a dedicated "Statistical Detail" tab.
+- CHARTS: At least 10 charts. Include scatter plots with regression lines, box plots via CSS, distribution histograms, heatmaps, bubble charts, and radar charts. Show confidence intervals where applicable.
+- INSIGHTS: Minimum 12 quantified insights. Include effect sizes, correlation coefficients (with n), and distribution shape descriptions (skewness, kurtosis proxy).
+- NUMBERS: Show full precision. Include ALL percentiles (p10, p25, p50, p75, p90, p99). Show Gini coefficient, polarization index, standard deviations. Always show both weighted and unweighted metrics side by side.
+- CORRELATIONS: Dedicate a section to all correlations with |r| >= 0.3. Include scatter plots for the strongest.
+- METHODOLOGY: Detailed tab with: sampling strategy (N-adaptive table used), influence weight formulas per source, enrichment detection method, number grounding approach. Include the raw DatasetSummary.meta as a collapsible JSON block.
+- TOP ITEMS TABLE: Full sortable table with all fields: rank, content snippet, author, date, engagement raw values, influence weight, sentiment, category.
+- RECOMMENDATIONS: Frame as hypotheses to test, not business directives. "The data suggests X (r=0.42, n=847); further investigation with Y methodology is warranted."`,
+};
+
 export function buildReportPrompt(
   summary: DatasetSummary,
   projectTitle: string,
-  locale: string
+  locale: string,
+  level: ReportLevel = "professional"
 ): { system: string; user: string } {
   const sourceGuidance = SOURCE_GUIDANCE[summary.meta.source] ?? SOURCE_GUIDANCE.generic;
+  const levelInstructions = LEVEL_INSTRUCTIONS[level];
   const LOCALE_LABELS: Record<string, string> = {
     en: "English",
     es: 'Spanish (Latin American / rioplatense-friendly, avoid Spain-isms like "vale" or "mola")',
@@ -118,6 +171,8 @@ ${summary.meta.enrichmentsRequestedButMissing.length > 0 ? `ENRICHMENTS REQUESTE
 ${summary.meta.limitations.length > 0 ? `LIMITATIONS: ${JSON.stringify(summary.meta.limitations)}` : ""}
 
 ${sourceGuidance}
+
+${levelInstructions}
 
 ================================================================
 CRITICAL: ALL NUMBERS ARE PRE-COMPUTED

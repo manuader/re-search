@@ -4,7 +4,7 @@ import { buildDatasetSummary } from "@/lib/reports/build-summary";
 import { buildReportPrompt } from "@/lib/reports/report-prompt";
 import { mapToolNameToSourceType } from "@/lib/reports/influence-weight";
 import { validateReportHTML, numbersAreGrounded } from "@/lib/reports/validators";
-import type { RawDataItem, EnrichmentFlags } from "@/lib/reports/types";
+import type { RawDataItem, EnrichmentFlags, ReportLevel } from "@/lib/reports/types";
 
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1";
 const SONNET_MODEL = "claude-sonnet-4-20250514";
@@ -15,6 +15,7 @@ type ReportGenerateEvent = {
     projectId: string;
     userId: string;
     locale: string;
+    level: ReportLevel;
   };
 };
 
@@ -25,7 +26,7 @@ export const generateReport = inngest.createFunction(
     triggers: [{ event: "report/generate" }],
   },
   async ({ event, step }) => {
-    const { projectId, userId, locale } =
+    const { projectId, userId, locale, level } =
       event.data as ReportGenerateEvent["data"];
     const supabase = createAdminClient();
 
@@ -123,7 +124,7 @@ export const generateReport = inngest.createFunction(
           `[report] Summary: N=${summary.meta.totalItems}, sample=${summary.meta.sampleSize}, source=${sourceType}`
         );
 
-        const prompt = buildReportPrompt(summary, project.title, locale);
+        const prompt = buildReportPrompt(summary, project.title, locale, level);
         console.log(
           `[report] Prompt: ${prompt.system.length + prompt.user.length} chars`
         );

@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   if (!user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { projectId } = await req.json();
+  const { projectId, level } = await req.json();
 
   // Verify project belongs to user
   const { data: project } = await supabase
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
   // Dispatch to Inngest (returns immediately)
   await inngest.send({
     name: "report/generate",
-    data: { projectId, userId: user.id, locale },
+    data: { projectId, userId: user.id, locale, level: level ?? "professional" },
   });
 
   return NextResponse.json({ status: "generating" });

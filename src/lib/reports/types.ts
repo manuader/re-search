@@ -2,6 +2,8 @@
 // Report Pipeline — Type Definitions
 // ---------------------------------------------------------------------------
 
+export type ReportLevel = "executive" | "professional" | "technical";
+
 export type SourceType =
   | "twitter"
   | "instagram"

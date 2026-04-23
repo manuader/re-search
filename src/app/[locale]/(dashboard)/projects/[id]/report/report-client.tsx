@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from "react"
 import { ReportViewer } from "@/components/project/report-viewer"
+import type { ReportLevel } from "@/lib/reports/types"
 
 interface ReportClientProps {
   projectId: string
@@ -9,11 +10,18 @@ interface ReportClientProps {
 }
 
 const POLL_INTERVAL = 5000
-const MAX_POLLS = 60 // 5 minutes max
+const MAX_POLLS = 60
+
+const LEVEL_LABELS: Record<ReportLevel, string> = {
+  executive: "Executive",
+  professional: "Professional",
+  technical: "Technical",
+}
 
 export function ReportClient({ projectId, initialHtmlContent }: ReportClientProps) {
   const [htmlContent, setHtmlContent] = useState<string | null>(initialHtmlContent)
   const [loading, setLoading] = useState(false)
+  const [showLevelPicker, setShowLevelPicker] = useState(false)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const initialCreatedAt = useRef<string | null>(null)
 
@@ -24,10 +32,10 @@ export function ReportClient({ projectId, initialHtmlContent }: ReportClientProp
     }
   }, [])
 
-  async function handleGenerate() {
+  async function handleGenerate(level: ReportLevel) {
+    setShowLevelPicker(false)
     setLoading(true)
 
-    // Remember the current latest report timestamp so we can detect a NEW one
     try {
       const statusRes = await fetch(`/api/report/status?projectId=${projectId}`)
       const statusData = await statusRes.json()
@@ -36,12 +44,11 @@ export function ReportClient({ projectId, initialHtmlContent }: ReportClientProp
       initialCreatedAt.current = null
     }
 
-    // Dispatch to Inngest via API
     try {
       const res = await fetch("/api/report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId }),
+        body: JSON.stringify({ projectId, level }),
       })
 
       const text = await res.text()
@@ -66,7 +73,6 @@ export function ReportClient({ projectId, initialHtmlContent }: ReportClientProp
       return
     }
 
-    // Poll for completion
     let pollCount = 0
     stopPolling()
     pollRef.current = setInterval(async () => {
@@ -91,9 +97,27 @@ export function ReportClient({ projectId, initialHtmlContent }: ReportClientProp
           setLoading(false)
         }
       } catch {
-        // Network blip — keep polling
+        // keep polling
       }
     }, POLL_INTERVAL)
+  }
+
+  if (showLevelPicker) {
+    return (
+      <div className="flex h-full w-full flex-col">
+        <div className="flex items-center justify-end border-b px-4 py-2">
+          <button
+            onClick={() => setShowLevelPicker(false)}
+            className="text-xs text-muted-foreground underline hover:text-foreground"
+          >
+            Cancel
+          </button>
+        </div>
+        <div className="flex-1 min-h-0">
+          <ReportViewer htmlContent={null} loading={false} onGenerate={handleGenerate} />
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -101,7 +125,7 @@ export function ReportClient({ projectId, initialHtmlContent }: ReportClientProp
       {htmlContent && (
         <div className="flex items-center justify-end border-b px-4 py-2">
           <button
-            onClick={handleGenerate}
+            onClick={() => setShowLevelPicker(true)}
             disabled={loading}
             className="text-xs text-muted-foreground underline hover:text-foreground"
           >

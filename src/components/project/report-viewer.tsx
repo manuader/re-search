@@ -1,14 +1,41 @@
 "use client"
 
-import { Loader2Icon, BarChart3Icon } from "lucide-react"
+import { Loader2Icon, BarChart3Icon, BriefcaseIcon, LineChartIcon, FlaskConicalIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import type { ReportLevel } from "@/lib/reports/types"
+
+const LEVELS: {
+  value: ReportLevel
+  icon: typeof BriefcaseIcon
+  title: string
+  description: string
+}[] = [
+  {
+    value: "executive",
+    icon: BriefcaseIcon,
+    title: "Executive",
+    description: "High-level summary for decision makers. Clear KPIs, minimal charts, plain language.",
+  },
+  {
+    value: "professional",
+    icon: LineChartIcon,
+    title: "Professional",
+    description: "Balanced analysis with charts, insights, and recommendations. Best for most use cases.",
+  },
+  {
+    value: "technical",
+    icon: FlaskConicalIcon,
+    title: "Technical",
+    description: "Full statistical deep-dive. Correlations, percentiles, distributions, raw data tables.",
+  },
+]
 
 interface ReportViewerProps {
   htmlContent: string | null
   loading: boolean
-  onGenerate: () => void
+  onGenerate: (level: ReportLevel) => void
 }
 
 export function ReportViewer({ htmlContent, loading, onGenerate }: ReportViewerProps) {
@@ -47,22 +74,41 @@ export function ReportViewer({ htmlContent, loading, onGenerate }: ReportViewerP
 
   return (
     <div className="flex h-full w-full items-center justify-center p-8">
-      <Card className="w-full max-w-md text-center">
-        <CardHeader className="items-center">
-          <div className="mb-2 flex size-12 items-center justify-center rounded-full bg-muted">
+      <div className="w-full max-w-2xl">
+        <div className="mb-6 text-center">
+          <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-muted">
             <BarChart3Icon className="size-6 text-muted-foreground" />
           </div>
-          <CardTitle>No Report Yet</CardTitle>
-          <CardDescription>
-            Generate an interactive report with charts and insights from your research data
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button onClick={onGenerate} className="w-full">
-            Generate Report
-          </Button>
-        </CardContent>
-      </Card>
+          <h2 className="text-lg font-semibold">Generate Report</h2>
+          <p className="text-sm text-muted-foreground">
+            Choose the level of detail for your research report
+          </p>
+        </div>
+        <div className="grid gap-3">
+          {LEVELS.map((level) => {
+            const Icon = level.icon
+            return (
+              <Card
+                key={level.value}
+                className="cursor-pointer transition-colors hover:border-primary/50 hover:bg-muted/40"
+                onClick={() => onGenerate(level.value)}
+              >
+                <CardHeader className="flex-row items-center gap-3 space-y-0 pb-2">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+                    <Icon className="size-4 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-sm">{level.title}</CardTitle>
+                    <CardDescription className="text-xs">
+                      {level.description}
+                    </CardDescription>
+                  </div>
+                </CardHeader>
+              </Card>
+            )
+          })}
+        </div>
+      </div>
     </div>
   )
 }
