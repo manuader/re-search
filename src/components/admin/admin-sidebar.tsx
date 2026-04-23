@@ -8,6 +8,11 @@ import {
   DollarSign,
   Users,
   FileText,
+  Activity,
+  BarChart3,
+  Bell,
+  ClipboardList,
+  Download,
   ArrowLeft,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
@@ -26,6 +31,11 @@ export function AdminSidebar({ adminEmail }: AdminSidebarProps) {
     { href: `/${locale}/admin/costs`, icon: DollarSign, label: t("nav.costs") },
     { href: `/${locale}/admin/users`, icon: Users, label: t("nav.users") },
     { href: `/${locale}/admin/orders`, icon: FileText, label: t("nav.orders") },
+    { href: `/${locale}/admin/health`, icon: Activity, label: t("nav.health") },
+    { href: `/${locale}/admin/funnel`, icon: BarChart3, label: t("nav.funnel") },
+    { href: `/${locale}/admin/alerts`, icon: Bell, label: t("nav.alerts") },
+    { href: `/${locale}/admin/audit`, icon: ClipboardList, label: t("nav.audit") },
+    { href: `/${locale}/admin/export`, icon: Download, label: t("nav.export") },
   ];
 
   function isActive(href: string): boolean {

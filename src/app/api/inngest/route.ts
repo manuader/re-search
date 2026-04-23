@@ -7,6 +7,7 @@ import { generateReport } from "@/lib/inngest/functions/generate-report";
 import { refundOrder } from "@/lib/inngest/functions/refund-order";
 import { expireOrders } from "@/lib/inngest/functions/expire-orders";
 import { refreshAdminViews } from "@/lib/inngest/functions/refresh-admin-views";
+import { detectAdminAlerts } from "@/lib/inngest/functions/detect-admin-alerts";
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
@@ -18,5 +19,6 @@ export const { GET, POST, PUT } = serve({
     refundOrder,
     expireOrders,
     refreshAdminViews,
+    detectAdminAlerts,
   ],
 });

@@ -140,6 +140,11 @@
       "costs": "Costos",
       "users": "Usuarios",
       "orders": "Ordenes",
+      "health": "Salud",
+      "funnel": "Funnel",
+      "alerts": "Alertas",
+      "audit": "Audit Log",
+      "export": "Exportar",
       "backToApp": "Volver a la app"
     },
     "overview": {
@@ -227,6 +232,79 @@
       "quality": "Calidad",
       "aiAnalysis": "Analisis IA",
       "analysisType": "Tipo de analisis"
+    },
+    "health": {
+      "title": "Salud del sistema",
+      "actorHealth": "Salud de herramientas",
+      "successRate7d": "Exito (7d)",
+      "avgCost": "Costo prom.",
+      "lastTest": "Ultimo test",
+      "failures": "Fallos",
+      "marginAnomalies": "Anomalias de margen",
+      "stuckOrders": "Ordenes atascadas",
+      "capTriggerRate": "Tasa de cap trigger",
+      "orderId": "ID de orden",
+      "charged": "Cobrado",
+      "actualCost": "Costo real",
+      "loss": "Perdida",
+      "status": "Estado",
+      "stuckMinutes": "Atascada",
+      "date": "Fecha",
+      "completed": "Completadas",
+      "capTriggered": "Cap activado",
+      "rate": "Tasa"
+    },
+    "funnel": {
+      "title": "Funnel de conversion",
+      "conversionFunnel": "Funnel de conversion (30 dias)",
+      "stages": {
+        "projects": "Proyectos creados",
+        "chatsStarted": "Chats iniciados",
+        "configsCompleted": "Configs completadas",
+        "checkoutsViewed": "Checkouts vistos",
+        "paymentsStarted": "Pagos iniciados",
+        "paymentsCompleted": "Pagos completados"
+      },
+      "noData": "Sin datos de funnel disponibles",
+      "timeToPay": "Tiempo hasta el pago",
+      "abandonmentByPrice": "Abandono por rango de precio",
+      "priceBucket": "Rango de precio",
+      "viewed": "Vistos",
+      "paid": "Pagados",
+      "conversionRate": "Conversion",
+      "reportTypeDistribution": "Distribucion por tipo de reporte",
+      "reportType": "Tipo de reporte",
+      "paidOrders": "Ordenes pagadas",
+      "avgPrice": "Precio prom."
+    },
+    "alerts": {
+      "title": "Alertas",
+      "active": "Alertas activas",
+      "noActive": "Sin alertas activas",
+      "acknowledge": "Resolver",
+      "showResolved": "Mostrar resueltas",
+      "hideResolved": "Ocultar resueltas"
+    },
+    "audit": {
+      "title": "Registro de auditoria",
+      "timestamp": "Fecha/hora",
+      "action": "Accion",
+      "resource": "Recurso",
+      "adminId": "Admin",
+      "ip": "Direccion IP",
+      "noEntries": "Sin registros",
+      "prev": "Anterior",
+      "next": "Siguiente"
+    },
+    "export": {
+      "title": "Exportar datos",
+      "type": "Tipo de exportacion",
+      "orders": "Ordenes",
+      "users": "Usuarios",
+      "from": "Desde",
+      "to": "Hasta",
+      "download": "Descargar CSV",
+      "exporting": "Exportando..."
     }
   }
 }

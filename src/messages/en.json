@@ -140,6 +140,11 @@
       "costs": "Costs",
       "users": "Users",
       "orders": "Orders",
+      "health": "Health",
+      "funnel": "Funnel",
+      "alerts": "Alerts",
+      "audit": "Audit Log",
+      "export": "Export",
       "backToApp": "Back to App"
     },
     "overview": {
@@ -227,6 +232,79 @@
       "quality": "Quality",
       "aiAnalysis": "AI Analysis",
       "analysisType": "Analysis Type"
+    },
+    "health": {
+      "title": "System Health",
+      "actorHealth": "Actor Health",
+      "successRate7d": "Success (7d)",
+      "avgCost": "Avg Cost",
+      "lastTest": "Last Test",
+      "failures": "Failures",
+      "marginAnomalies": "Margin Anomalies",
+      "stuckOrders": "Stuck Orders",
+      "capTriggerRate": "Cap Trigger Rate",
+      "orderId": "Order ID",
+      "charged": "Charged",
+      "actualCost": "Actual Cost",
+      "loss": "Loss",
+      "status": "Status",
+      "stuckMinutes": "Stuck",
+      "date": "Date",
+      "completed": "Completed",
+      "capTriggered": "Cap Triggered",
+      "rate": "Rate"
+    },
+    "funnel": {
+      "title": "Conversion Funnel",
+      "conversionFunnel": "30-Day Conversion Funnel",
+      "stages": {
+        "projects": "Projects Created",
+        "chatsStarted": "Chats Started",
+        "configsCompleted": "Configs Completed",
+        "checkoutsViewed": "Checkouts Viewed",
+        "paymentsStarted": "Payments Started",
+        "paymentsCompleted": "Payments Completed"
+      },
+      "noData": "No funnel data available",
+      "timeToPay": "Time to Pay",
+      "abandonmentByPrice": "Abandonment by Price Range",
+      "priceBucket": "Price Range",
+      "viewed": "Viewed",
+      "paid": "Paid",
+      "conversionRate": "Conversion",
+      "reportTypeDistribution": "Report Type Distribution",
+      "reportType": "Report Type",
+      "paidOrders": "Paid Orders",
+      "avgPrice": "Avg Price"
+    },
+    "alerts": {
+      "title": "Alerts",
+      "active": "Active Alerts",
+      "noActive": "No active alerts",
+      "acknowledge": "Acknowledge",
+      "showResolved": "Show Resolved",
+      "hideResolved": "Hide Resolved"
+    },
+    "audit": {
+      "title": "Audit Log",
+      "timestamp": "Timestamp",
+      "action": "Action",
+      "resource": "Resource",
+      "adminId": "Admin",
+      "ip": "IP Address",
+      "noEntries": "No audit entries",
+      "prev": "Previous",
+      "next": "Next"
+    },
+    "export": {
+      "title": "Export Data",
+      "type": "Export Type",
+      "orders": "Orders",
+      "users": "Users",
+      "from": "From",
+      "to": "To",
+      "download": "Download CSV",
+      "exporting": "Exporting..."
     }
   }
 }
