@@ -35,7 +35,86 @@
       "configured": "Configurado",
       "running": "Ejecutando",
       "completed": "Completado",
-      "failed": "Fallido"
+      "completed_partial": "Parcialmente completado",
+      "failed": "Fallido",
+      "pending": "Pendiente"
+    },
+    "progress": {
+      "researchCompleted": "Investigacion completada",
+      "researchFailed": "Investigacion fallida",
+      "researchInProgress": "Investigacion en progreso...",
+      "researchPending": "Investigacion pendiente",
+      "noJobs": "No se encontraron trabajos de scraping.",
+      "results": "{actual} / {estimated} resultados",
+      "cost": "Costo: ~{amount}",
+      "estimatedCost": "Costo est.: ~{amount}",
+      "qualityHigh": "Alta calidad",
+      "qualityMedium": "Calidad media",
+      "qualityLow": "Baja calidad"
+    },
+    "dataTable": {
+      "cellValue": "Valor de celda",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "searchPlaceholder": "Buscar en todas las columnas...",
+      "resultCount": "{count} resultado(s)",
+      "noData": "Sin datos disponibles",
+      "pagination": "Pagina {current} de {total} · {rows} filas",
+      "previous": "Anterior",
+      "next": "Siguiente"
+    },
+    "export": {
+      "export": "Exportar",
+      "exporting": "Exportando...",
+      "excel": "Exportar Excel (.xlsx)",
+      "csv": "Exportar CSV (.csv)",
+      "failed": "Error al exportar"
+    },
+    "reportGen": {
+      "generateReport": "Generar reporte",
+      "chooseLevel": "Elegi el nivel de detalle para tu reporte de investigacion",
+      "generating": "Generando reporte... Esto puede tardar un momento",
+      "regenerate": "Regenerar reporte",
+      "executiveTitle": "Ejecutivo",
+      "executiveDesc": "Resumen de alto nivel para tomadores de decisiones. KPIs claros, graficos minimos, lenguaje simple.",
+      "professionalTitle": "Profesional",
+      "professionalDesc": "Analisis balanceado con graficos, insights y recomendaciones. Ideal para la mayoria de los casos.",
+      "technicalTitle": "Tecnico",
+      "technicalDesc": "Analisis estadistico profundo. Correlaciones, percentiles, distribuciones, tablas de datos crudos."
+    }
+  },
+  "chat": {
+    "placeholder": "Describi tu objetivo de investigacion...",
+    "emptyState": "Describi tu objetivo de investigacion y te voy a sugerir herramientas con estimaciones de costo",
+    "confirmStart": "Confirmar. Iniciar la investigacion ahora.",
+    "summary": "Resumen de la investigacion",
+    "configuring": "Configurando...",
+    "estimatedTotal": "Total estimado",
+    "startResearch": "Iniciar investigacion",
+    "starting": "Iniciando...",
+    "results": "~{count} resultados",
+    "toolStatus": {
+      "searchingTools": "Buscando herramientas...",
+      "searchedTools": "Herramientas encontradas",
+      "loadingConfig": "Cargando configuracion...",
+      "loadedConfig": "Configuracion cargada",
+      "calculatingCosts": "Calculando costos...",
+      "calculatedCosts": "Costos calculados",
+      "generatingKeywords": "Generando palabras clave...",
+      "generatedKeywords": "Palabras clave generadas",
+      "analyzingOptions": "Analizando opciones...",
+      "analyzedOptions": "Opciones analizadas",
+      "executingResearch": "Ejecutando investigacion...",
+      "executedResearch": "Investigacion ejecutada",
+      "running": "Ejecutando {tool}...",
+      "completed": "Completado {tool}",
+      "error": "Error"
+    },
+    "keywords": {
+      "title": "{tool} — Palabras clave",
+      "selectAll": "Seleccionar todo",
+      "deselectAll": "Deseleccionar todo",
+      "count": "{selected} de {total} palabras clave"
     }
   },
   "billing": {

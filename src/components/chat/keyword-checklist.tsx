@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 
 interface KeywordChecklistProps {
   toolId: string;
@@ -21,6 +22,7 @@ export function KeywordChecklist({
   onSelectionChange,
 }: KeywordChecklistProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set(keywords));
+  const t = useTranslations("chat");
 
   function toggle(keyword: string) {
     setSelected((prev) => {
@@ -51,13 +53,13 @@ export function KeywordChecklist({
   return (
     <Card className="w-full max-w-md">
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm">{toolName} — Keywords</CardTitle>
+        <CardTitle className="text-sm">{t("keywords.title", { tool: toolName })}</CardTitle>
         <div className="flex gap-2">
           <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={selectAll}>
-            Select all
+            {t("keywords.selectAll")}
           </Button>
           <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={deselectAll}>
-            Deselect all
+            {t("keywords.deselectAll")}
           </Button>
         </div>
       </CardHeader>
@@ -74,7 +76,7 @@ export function KeywordChecklist({
       </CardContent>
       <CardFooter className="pt-2 border-t">
         <div className="flex w-full items-center justify-between text-xs text-muted-foreground">
-          <span>{selected.size} of {keywords.length} keywords</span>
+          <span>{t("keywords.count", { selected: selected.size, total: keywords.length })}</span>
           <span className="font-medium text-foreground">~${totalCost.toFixed(2)}</span>
         </div>
       </CardFooter>

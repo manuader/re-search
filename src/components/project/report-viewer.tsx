@@ -1,35 +1,20 @@
 "use client"
 
 import { Loader2Icon, BarChart3Icon, BriefcaseIcon, LineChartIcon, FlaskConicalIcon } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useTranslations } from "next-intl"
 import type { ReportLevel } from "@/lib/reports/types"
 
 const LEVELS: {
   value: ReportLevel
   icon: typeof BriefcaseIcon
-  title: string
-  description: string
+  titleKey: string
+  descKey: string
 }[] = [
-  {
-    value: "executive",
-    icon: BriefcaseIcon,
-    title: "Executive",
-    description: "High-level summary for decision makers. Clear KPIs, minimal charts, plain language.",
-  },
-  {
-    value: "professional",
-    icon: LineChartIcon,
-    title: "Professional",
-    description: "Balanced analysis with charts, insights, and recommendations. Best for most use cases.",
-  },
-  {
-    value: "technical",
-    icon: FlaskConicalIcon,
-    title: "Technical",
-    description: "Full statistical deep-dive. Correlations, percentiles, distributions, raw data tables.",
-  },
+  { value: "executive", icon: BriefcaseIcon, titleKey: "executiveTitle", descKey: "executiveDesc" },
+  { value: "professional", icon: LineChartIcon, titleKey: "professionalTitle", descKey: "professionalDesc" },
+  { value: "technical", icon: FlaskConicalIcon, titleKey: "technicalTitle", descKey: "technicalDesc" },
 ]
 
 interface ReportViewerProps {
@@ -39,6 +24,8 @@ interface ReportViewerProps {
 }
 
 export function ReportViewer({ htmlContent, loading, onGenerate }: ReportViewerProps) {
+  const t = useTranslations("project.reportGen")
+
   if (htmlContent) {
     return (
       <iframe
@@ -56,7 +43,7 @@ export function ReportViewer({ htmlContent, loading, onGenerate }: ReportViewerP
         <div className="flex flex-col items-center gap-3">
           <Loader2Icon className="size-8 animate-spin text-muted-foreground" />
           <p className="text-sm font-medium text-muted-foreground">
-            Generating report... This may take a moment
+            {t("generating")}
           </p>
         </div>
         <div className="w-full max-w-2xl space-y-3">
@@ -79,9 +66,9 @@ export function ReportViewer({ htmlContent, loading, onGenerate }: ReportViewerP
           <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-muted">
             <BarChart3Icon className="size-6 text-muted-foreground" />
           </div>
-          <h2 className="text-lg font-semibold">Generate Report</h2>
+          <h2 className="text-lg font-semibold">{t("generateReport")}</h2>
           <p className="text-sm text-muted-foreground">
-            Choose the level of detail for your research report
+            {t("chooseLevel")}
           </p>
         </div>
         <div className="grid gap-3">
@@ -98,9 +85,9 @@ export function ReportViewer({ htmlContent, loading, onGenerate }: ReportViewerP
                     <Icon className="size-4 text-muted-foreground" />
                   </div>
                   <div>
-                    <CardTitle className="text-sm">{level.title}</CardTitle>
+                    <CardTitle className="text-sm">{t(level.titleKey)}</CardTitle>
                     <CardDescription className="text-xs">
-                      {level.description}
+                      {t(level.descKey)}
                     </CardDescription>
                   </div>
                 </CardHeader>

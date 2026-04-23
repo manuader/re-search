@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Loader2Icon, ChevronDownIcon, FileSpreadsheetIcon, FileTextIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useTranslations } from "next-intl"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +20,7 @@ type ExportFormat = "xlsx" | "csv"
 export function ExportButton({ projectId }: ExportButtonProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const t = useTranslations("project.export")
 
   async function handleExport(format: ExportFormat) {
     setLoading(true)
@@ -39,7 +41,7 @@ export function ExportButton({ projectId }: ExportButtonProps) {
       window.open(url, "_blank")
     } catch (err) {
       console.error("[ExportButton] Export failed:", err)
-      setError(err instanceof Error ? err.message : "Export failed")
+      setError(err instanceof Error ? err.message : t("failed"))
     } finally {
       setLoading(false)
     }
@@ -53,11 +55,11 @@ export function ExportButton({ projectId }: ExportButtonProps) {
             {loading ? (
               <>
                 <Loader2Icon className="size-4 animate-spin" />
-                Exporting...
+                {t("exporting")}
               </>
             ) : (
               <>
-                Export
+                {t("export")}
                 <ChevronDownIcon className="size-4" />
               </>
             )}
@@ -69,14 +71,14 @@ export function ExportButton({ projectId }: ExportButtonProps) {
             onClick={() => handleExport("xlsx")}
           >
             <FileSpreadsheetIcon className="size-4 text-green-600" />
-            Export Excel (.xlsx)
+            {t("excel")}
           </DropdownMenuItem>
           <DropdownMenuItem
             disabled={loading}
             onClick={() => handleExport("csv")}
           >
             <FileTextIcon className="size-4 text-blue-600" />
-            Export CSV (.csv)
+            {t("csv")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

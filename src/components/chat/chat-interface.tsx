@@ -8,6 +8,7 @@ import type { Locale } from "@/types";
 import { MessageList } from "./message-list";
 import { ChatInput } from "./chat-input";
 import { CostCard } from "./cost-card";
+import { useTranslations } from "next-intl";
 
 interface SelectedTool {
   toolId: string;
@@ -105,6 +106,7 @@ export function ChatInterface({
   initialMessages,
   projectStatus,
 }: ChatInterfaceProps) {
+  const t = useTranslations("chat");
   const [selectedTools, setSelectedTools] = useState<SelectedTool[]>([]);
   const [totalCost, setTotalCost] = useState(0);
   const [keywordCosts, setKeywordCosts] = useState<Record<string, { count: number; costPerKeyword: number }>>({});
@@ -163,7 +165,7 @@ export function ChatInterface({
           totalCost={totalCost}
           disabled={isDisabled}
           onStartResearch={() => {
-            sendMessage({ text: "Confirm. Start the research now." });
+            sendMessage({ text: t("confirmStart") });
           }}
         />
       </div>

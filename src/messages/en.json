@@ -35,7 +35,86 @@
       "configured": "Configured",
       "running": "Running",
       "completed": "Completed",
-      "failed": "Failed"
+      "completed_partial": "Partially Completed",
+      "failed": "Failed",
+      "pending": "Pending"
+    },
+    "progress": {
+      "researchCompleted": "Research completed",
+      "researchFailed": "Research failed",
+      "researchInProgress": "Research in progress...",
+      "researchPending": "Research pending",
+      "noJobs": "No scraping jobs found.",
+      "results": "{actual} / {estimated} results",
+      "cost": "Cost: ~{amount}",
+      "estimatedCost": "Est. cost: ~{amount}",
+      "qualityHigh": "High quality",
+      "qualityMedium": "Medium quality",
+      "qualityLow": "Low quality"
+    },
+    "dataTable": {
+      "cellValue": "Cell value",
+      "copy": "Copy",
+      "copied": "Copied",
+      "searchPlaceholder": "Search all columns...",
+      "resultCount": "{count} result(s)",
+      "noData": "No data available",
+      "pagination": "Page {current} of {total} · {rows} rows",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "export": {
+      "export": "Export",
+      "exporting": "Exporting...",
+      "excel": "Export Excel (.xlsx)",
+      "csv": "Export CSV (.csv)",
+      "failed": "Export failed"
+    },
+    "reportGen": {
+      "generateReport": "Generate Report",
+      "chooseLevel": "Choose the level of detail for your research report",
+      "generating": "Generating report... This may take a moment",
+      "regenerate": "Regenerate report",
+      "executiveTitle": "Executive",
+      "executiveDesc": "High-level summary for decision makers. Clear KPIs, minimal charts, plain language.",
+      "professionalTitle": "Professional",
+      "professionalDesc": "Balanced analysis with charts, insights, and recommendations. Best for most use cases.",
+      "technicalTitle": "Technical",
+      "technicalDesc": "Full statistical deep-dive. Correlations, percentiles, distributions, raw data tables."
+    }
+  },
+  "chat": {
+    "placeholder": "Describe your research goal...",
+    "emptyState": "Describe your research goal and I'll suggest tools with cost estimates",
+    "confirmStart": "Confirm. Start the research now.",
+    "summary": "Research Summary",
+    "configuring": "Configuring...",
+    "estimatedTotal": "Estimated Total",
+    "startResearch": "Start Research",
+    "starting": "Starting...",
+    "results": "~{count} results",
+    "toolStatus": {
+      "searchingTools": "Searching tools...",
+      "searchedTools": "Searched tools",
+      "loadingConfig": "Loading configuration...",
+      "loadedConfig": "Loaded configuration",
+      "calculatingCosts": "Calculating costs...",
+      "calculatedCosts": "Calculated costs",
+      "generatingKeywords": "Generating keywords...",
+      "generatedKeywords": "Generated keywords",
+      "analyzingOptions": "Analyzing options...",
+      "analyzedOptions": "Analyzed options",
+      "executingResearch": "Executing research...",
+      "executedResearch": "Executed research",
+      "running": "Running {tool}...",
+      "completed": "Completed {tool}",
+      "error": "Error"
+    },
+    "keywords": {
+      "title": "{tool} — Keywords",
+      "selectAll": "Select all",
+      "deselectAll": "Deselect all",
+      "count": "{selected} of {total} keywords"
     }
   },
   "billing": {

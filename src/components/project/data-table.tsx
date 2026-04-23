@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useTranslations } from "next-intl"
 
 interface DataTableProps {
   data: {
@@ -36,7 +37,7 @@ function formatCellValue(value: unknown): string {
   return String(value)
 }
 
-function CellDetail({ value, onClose }: { value: string; onClose: () => void }) {
+function CellDetail({ value, onClose, cellValueLabel, copyLabel, copiedLabel }: { value: string; onClose: () => void; cellValueLabel: string; copyLabel: string; copiedLabel: string }) {
   const [copied, setCopied] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -65,11 +66,11 @@ function CellDetail({ value, onClose }: { value: string; onClose: () => void }) 
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div ref={ref} className="mx-4 flex max-h-[70vh] w-full max-w-lg flex-col rounded-lg border border-border bg-background shadow-lg">
         <div className="flex items-center justify-between border-b px-4 py-2">
-          <span className="text-sm font-medium">Cell value</span>
+          <span className="text-sm font-medium">{cellValueLabel}</span>
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="sm" onClick={handleCopy} className="h-7 gap-1 text-xs">
               {copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
-              {copied ? "Copied" : "Copy"}
+              {copied ? copiedLabel : copyLabel}
             </Button>
             <Button variant="ghost" size="sm" onClick={onClose} className="h-7 w-7 p-0">
               <XIcon className="size-3.5" />
@@ -85,6 +86,7 @@ function CellDetail({ value, onClose }: { value: string; onClose: () => void }) 
 }
 
 export function DataTable({ data, loading }: DataTableProps) {
+  const t = useTranslations("project.dataTable")
   const [search, setSearch] = useState("")
   const [sortCol, setSortCol] = useState<string | null>(null)
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
@@ -186,14 +188,14 @@ export function DataTable({ data, loading }: DataTableProps) {
       {/* Search */}
       <div className="flex items-center gap-2">
         <Input
-          placeholder="Search all columns..."
+          placeholder={t("searchPlaceholder")}
           value={search}
           onChange={(e) => handleSearch(e.target.value)}
           className="max-w-xs"
         />
         {search && (
           <span className="text-xs text-muted-foreground">
-            {sortedRows.length} result{sortedRows.length !== 1 ? "s" : ""}
+            {t("resultCount", { count: sortedRows.length })}
           </span>
         )}
       </div>
@@ -246,7 +248,7 @@ export function DataTable({ data, loading }: DataTableProps) {
                   colSpan={columns.length + 1}
                   className="px-3 py-12 text-center text-sm text-muted-foreground"
                 >
-                  No data available
+                  {t("noData")}
                 </td>
               </tr>
             ) : (
@@ -281,14 +283,14 @@ export function DataTable({ data, loading }: DataTableProps) {
       </div>
 
       {selectedCell !== null && (
-        <CellDetail value={selectedCell} onClose={() => setSelectedCell(null)} />
+        <CellDetail value={selectedCell} onClose={() => setSelectedCell(null)} cellValueLabel={t("cellValue")} copyLabel={t("copy")} copiedLabel={t("copied")} />
       )}
 
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">
-            Page {currentPage} of {totalPages} &middot; {sortedRows.length} rows
+            {t("pagination", { current: currentPage, total: totalPages, rows: sortedRows.length })}
           </span>
           <div className="flex items-center gap-1.5">
             <Button
@@ -297,7 +299,7 @@ export function DataTable({ data, loading }: DataTableProps) {
               disabled={currentPage <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
             >
-              Previous
+              {t("previous")}
             </Button>
             <Button
               variant="outline"
@@ -305,7 +307,7 @@ export function DataTable({ data, loading }: DataTableProps) {
               disabled={currentPage >= totalPages}
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             >
-              Next
+              {t("next")}
             </Button>
           </div>
         </div>

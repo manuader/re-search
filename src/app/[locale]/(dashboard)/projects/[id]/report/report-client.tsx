@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from "react"
 import { ReportViewer } from "@/components/project/report-viewer"
+import { useTranslations } from "next-intl"
 import type { ReportLevel } from "@/lib/reports/types"
 
 interface ReportClientProps {
@@ -19,6 +20,8 @@ const LEVEL_LABELS: Record<ReportLevel, string> = {
 }
 
 export function ReportClient({ projectId, initialHtmlContent }: ReportClientProps) {
+  const t = useTranslations("project.reportGen")
+  const tc = useTranslations("common")
   const [htmlContent, setHtmlContent] = useState<string | null>(initialHtmlContent)
   const [loading, setLoading] = useState(false)
   const [showLevelPicker, setShowLevelPicker] = useState(false)
@@ -110,7 +113,7 @@ export function ReportClient({ projectId, initialHtmlContent }: ReportClientProp
             onClick={() => setShowLevelPicker(false)}
             className="text-xs text-muted-foreground underline hover:text-foreground"
           >
-            Cancel
+            {tc("cancel")}
           </button>
         </div>
         <div className="flex-1 min-h-0">
@@ -129,7 +132,7 @@ export function ReportClient({ projectId, initialHtmlContent }: ReportClientProp
             disabled={loading}
             className="text-xs text-muted-foreground underline hover:text-foreground"
           >
-            {loading ? "Generating..." : "Regenerate report"}
+            {loading ? t("generating") : t("regenerate")}
           </button>
         </div>
       )}

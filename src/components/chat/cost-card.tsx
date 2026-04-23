@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { useTranslations } from "next-intl";
 
 interface SelectedTool {
   toolId?: string;
@@ -42,13 +42,14 @@ function healthBadgeVariant(status: string) {
 
 export function CostCard({ tools, totalCost, onStartResearch, disabled }: CostCardProps) {
   const [starting, setStarting] = useState(false);
+  const t = useTranslations("chat");
 
   if (tools.length === 0) {
     return (
       <Card className="border-dashed">
         <CardContent className="flex items-center justify-center py-8">
           <p className="text-sm text-muted-foreground text-center">
-            Describe your research goal and I&apos;ll suggest tools with cost estimates
+            {t("emptyState")}
           </p>
         </CardContent>
       </Card>
@@ -60,7 +61,7 @@ export function CostCard({ tools, totalCost, onStartResearch, disabled }: CostCa
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Research Summary</CardTitle>
+        <CardTitle className="text-base">{t("summary")}</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         {tools.map((tool, i) => (
@@ -74,8 +75,8 @@ export function CostCard({ tools, totalCost, onStartResearch, disabled }: CostCa
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>
                 {tool.estimatedResults > 0
-                  ? `~${tool.estimatedResults.toLocaleString()} results`
-                  : "Configuring..."}
+                  ? t("results", { count: tool.estimatedResults.toLocaleString() })
+                  : t("configuring")}
               </span>
               <span className="font-medium">
                 {tool.cost > 0 ? `$${tool.cost.toFixed(2)}` : "—"}
@@ -87,7 +88,7 @@ export function CostCard({ tools, totalCost, onStartResearch, disabled }: CostCa
 
       <CardFooter className="flex flex-col gap-3 pt-3 border-t">
         <div className="flex w-full items-center justify-between">
-          <span className="text-sm font-medium">Estimated Total</span>
+          <span className="text-sm font-medium">{t("estimatedTotal")}</span>
           <span className="text-lg font-bold">
             {totalCost > 0 ? `$${totalCost.toFixed(2)}` : "—"}
           </span>
@@ -103,7 +104,7 @@ export function CostCard({ tools, totalCost, onStartResearch, disabled }: CostCa
               onStartResearch();
             }}
           >
-            {starting ? "Starting..." : "Start Research"}
+            {starting ? t("starting") : t("startResearch")}
           </Button>
         )}
       </CardFooter>

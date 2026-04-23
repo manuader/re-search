@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { useRealtimeProgress } from "@/hooks/use-realtime-progress";
+import { useTranslations } from "next-intl";
 
 interface ProgressTrackerProps {
   projectId: string;
@@ -11,11 +12,11 @@ interface ProgressTrackerProps {
 
 type JobStatus = "pending" | "running" | "completed" | "failed";
 
-const statusStyles: Record<JobStatus, { border: string; text: string; label: string }> = {
-  completed: { border: "border-l-green-500", text: "text-green-600", label: "Completed" },
-  running: { border: "border-l-yellow-500", text: "text-yellow-600", label: "Running" },
-  pending: { border: "border-l-gray-300", text: "text-gray-400", label: "Pending" },
-  failed: { border: "border-l-red-500", text: "text-red-600", label: "Failed" },
+const statusStyleMap: Record<JobStatus, { border: string; text: string; key: string }> = {
+  completed: { border: "border-l-green-500", text: "text-green-600", key: "completed" },
+  running: { border: "border-l-yellow-500", text: "text-yellow-600", key: "running" },
+  pending: { border: "border-l-gray-300", text: "text-gray-400", key: "pending" },
+  failed: { border: "border-l-red-500", text: "text-red-600", key: "failed" },
 };
 
 function getQualityBadgeClass(score: string): string {
@@ -30,21 +31,23 @@ function getQualityBadgeClass(score: string): string {
   return "bg-red-100 text-red-700 border-red-200";
 }
 
-function getQualityLabel(score: string): string {
+function getQualityKey(score: string): string {
   const n = parseFloat(score);
   if (!isNaN(n)) {
-    if (n >= 0.7) return "High";
-    if (n >= 0.4) return "Medium";
-    return "Low";
+    if (n >= 0.7) return "qualityHigh";
+    if (n >= 0.4) return "qualityMedium";
+    return "qualityLow";
   }
-  return score.charAt(0).toUpperCase() + score.slice(1);
+  if (score === "high") return "qualityHigh";
+  if (score === "medium") return "qualityMedium";
+  return "qualityLow";
 }
 
 function formatCost(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
-function JobCard({ job }: { job: {
+function JobCard({ job, t }: { job: {
   id: string;
   tool_id: string;
   tool_name: string;
@@ -55,9 +58,9 @@ function JobCard({ job }: { job: {
   actual_cost: number | null;
   quality_score: string | null;
   error_message: string | null;
-}}) {
-  const status = (job.status as JobStatus) in statusStyles ? (job.status as JobStatus) : "pending";
-  const styles = statusStyles[status];
+}; t: ReturnType<typeof useTranslations> }) {
+  const status = (job.status as JobStatus) in statusStyleMap ? (job.status as JobStatus) : "pending";
+  const styles = statusStyleMap[status];
 
   const hasProgress = job.actual_results != null && job.estimated_results != null && job.estimated_results > 0;
   const progressPercent = hasProgress
@@ -75,10 +78,11 @@ function JobCard({ job }: { job: {
     <div className={`border-l-4 ${styles.border} rounded-lg bg-card ring-1 ring-foreground/10 p-4 flex flex-col gap-3`}>
       <div className="flex items-center justify-between gap-2">
         <span className="font-semibold text-sm text-card-foreground">{job.tool_name}</span>
-        <span className={`text-xs font-medium ${styles.text}`}>{styles.label}</span>
+        <span className={`text-xs font-medium ${styles.text}`}>
+          {t(`status.${styles.key}`)}
+        </span>
       </div>
 
-      {/* Progress bar */}
       <div className="flex flex-col gap-1">
         <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
           {progressPercent != null ? (
@@ -100,33 +104,33 @@ function JobCard({ job }: { job: {
         </div>
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>
-            {job.actual_results != null ? job.actual_results : 0}
-            {job.estimated_results != null ? ` / ${job.estimated_results} results` : " results"}
+            {t("progress.results", {
+              actual: job.actual_results ?? 0,
+              estimated: job.estimated_results ?? 0,
+            })}
           </span>
           {progressPercent != null && <span>{progressPercent}%</span>}
         </div>
       </div>
 
       <div className="flex items-center justify-between gap-2">
-        {/* Cost */}
         {displayCost && (
           <span className="text-xs text-muted-foreground">
-            {status === "completed" ? "Cost: " : "Est. cost: "}
-            <span className="font-medium text-card-foreground">{displayCost}</span>
+            {status === "completed"
+              ? t("progress.cost", { amount: displayCost })
+              : t("progress.estimatedCost", { amount: displayCost })}
           </span>
         )}
 
-        {/* Quality badge */}
         {status === "completed" && job.quality_score != null && (
           <span
             className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${getQualityBadgeClass(job.quality_score)}`}
           >
-            {getQualityLabel(job.quality_score)} quality
+            {t(`progress.${getQualityKey(job.quality_score)}`)}
           </span>
         )}
       </div>
 
-      {/* Error message */}
       {status === "failed" && job.error_message && (
         <p className="text-xs text-red-600 break-words">{job.error_message}</p>
       )}
@@ -158,6 +162,7 @@ function LoadingSkeleton() {
 
 export function ProgressTracker({ projectId }: ProgressTrackerProps) {
   const { jobs, projectStatus, loading } = useRealtimeProgress(projectId);
+  const t = useTranslations("project");
 
   if (loading) {
     return (
@@ -169,14 +174,14 @@ export function ProgressTracker({ projectId }: ProgressTrackerProps) {
     );
   }
 
-  const headerText =
+  const headerKey =
     projectStatus === "completed"
-      ? "Research completed"
+      ? "progress.researchCompleted"
       : projectStatus === "failed"
-      ? "Research failed"
+      ? "progress.researchFailed"
       : projectStatus === "running"
-      ? "Research in progress..."
-      : "Research pending";
+      ? "progress.researchInProgress"
+      : "progress.researchPending";
 
   const headerTextClass =
     projectStatus === "completed"
@@ -190,14 +195,14 @@ export function ProgressTracker({ projectId }: ProgressTrackerProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className={`text-base ${headerTextClass}`}>{headerText}</CardTitle>
+        <CardTitle className={`text-base ${headerTextClass}`}>{t(headerKey)}</CardTitle>
       </CardHeader>
       <Separator />
       <CardContent className="pt-4 flex flex-col gap-3">
         {jobs.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No scraping jobs found.</p>
+          <p className="text-sm text-muted-foreground">{t("progress.noJobs")}</p>
         ) : (
-          jobs.map((job) => <JobCard key={job.id} job={job} />)
+          jobs.map((job) => <JobCard key={job.id} job={job} t={t} />)
         )}
       </CardContent>
     </Card>
