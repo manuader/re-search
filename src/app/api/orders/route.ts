@@ -124,7 +124,15 @@ export async function POST(req: Request) {
     .single();
 
   const locale = profile?.locale ?? "en";
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/+$/, "");
+
+  if (!appUrl) {
+    console.error("[POST /api/orders] NEXT_PUBLIC_APP_URL is not set");
+    return NextResponse.json(
+      { error: "Server misconfigured: APP_URL not set" },
+      { status: 500 }
+    );
+  }
 
   // Create order in DB
   const admin = createAdminClient();
