@@ -175,7 +175,20 @@ export async function POST(req: Request) {
     paymentUrl = mpResult.init_point!;
     preferenceId = mpResult.id!;
   } catch (err) {
-    const errMsg = err instanceof Error ? err.message : String(err);
+    // MP SDK throws objects, not Error instances — extract details
+    let errMsg: string;
+    if (err instanceof Error) {
+      errMsg = err.message;
+    } else if (err && typeof err === "object") {
+      const e = err as Record<string, unknown>;
+      errMsg = String(
+        e.message ?? e.cause ?? e.statusCode
+          ? `MP status ${e.statusCode}: ${JSON.stringify(e.message ?? e.cause)}`
+          : JSON.stringify(err)
+      );
+    } else {
+      errMsg = String(err);
+    }
 
     // Clean up the order if MP preference creation fails
     await admin
