@@ -80,34 +80,39 @@ export async function createOrderPreference({
 }: CreateOrderPreferenceParams) {
   const preference = new Preference(client);
 
-  const result = await preference.create({
-    body: {
-      items: [
-        {
-          id: `order-${orderId}`,
-          title: ORDER_TITLES[locale] ?? "ResearchBot Research",
-          description: projectTitle,
-          quantity: 1,
-          unit_price: Math.round(priceUsd * USD_TO_ARS),
-          currency_id: "ARS",
-        },
-      ],
-      back_urls: {
-        success: `${appUrl}/${locale}/checkout/success`,
-        failure: `${appUrl}/${locale}/checkout/failure`,
-        pending: `${appUrl}/${locale}/checkout/pending`,
+  const body = {
+    items: [
+      {
+        id: `order-${orderId}`,
+        title: ORDER_TITLES[locale] ?? "ResearchBot Research",
+        description: projectTitle,
+        quantity: 1,
+        unit_price: Math.round(priceUsd * USD_TO_ARS),
+        currency_id: "ARS",
       },
-      auto_return: "approved",
-      notification_url: `${appUrl}/api/webhooks/mercadopago`,
-      metadata: {
-        order_id: orderId,
-        user_id: userId,
-      },
-      external_reference: orderId,
+    ],
+    back_urls: {
+      success: `${appUrl}/${locale}/checkout/success`,
+      failure: `${appUrl}/${locale}/checkout/failure`,
+      pending: `${appUrl}/${locale}/checkout/pending`,
     },
-  });
+    auto_return: "approved" as const,
+    // notification_url configured in MP dashboard instead of per-preference
+    metadata: {
+      order_id: orderId,
+      user_id: userId,
+    },
+    external_reference: orderId,
+  };
 
-  return result;
+  try {
+    return await preference.create({ body });
+  } catch (err) {
+    // MP may reject back_urls — retry without them as fallback
+    console.error("[MP] preference failed, retrying without back_urls:", JSON.stringify(err));
+    const { back_urls, auto_return, ...fallbackBody } = body;
+    return await preference.create({ body: fallbackBody });
+  }
 }
 
 export async function refundPayment(
