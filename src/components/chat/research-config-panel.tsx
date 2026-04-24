@@ -3,6 +3,9 @@
 import { useState, useCallback } from "react";
 import type { Locale } from "@/types";
 import type { PanelTool, PanelAIAnalysis } from "./chat-interface";
+import { getToolSchema } from "@/lib/apify/schemas";
+import { getChatbotParams } from "@/lib/apify/tool-schema";
+import { ParamInput } from "./param-inputs";
 import {
   Card,
   CardHeader,
@@ -24,8 +27,9 @@ interface ResearchConfigPanelProps {
   locale: Locale;
   tools: PanelTool[];
   aiAnalyses: PanelAIAnalysis[];
-  totalCost: number;
+  totalPrice: number;
   onKeywordChange: (toolId: string, keywords: string[]) => void;
+  onConfigChange: (toolId: string, config: Record<string, unknown>) => void;
   onGoToCheckout: () => void;
   disabled: boolean;
 }
@@ -45,7 +49,7 @@ function healthBadgeVariant(status: string) {
   }
 }
 
-const AI_ANALYSIS_LABELS: Record<string, Record<string, string>> = {
+const AI_LABELS: Record<string, Record<string, string>> = {
   sentiment: { en: "Sentiment", es: "Sentimiento" },
   classification: { en: "Classification", es: "Clasificacion" },
   pain_points: { en: "Pain Points", es: "Puntos de dolor" },
@@ -59,8 +63,9 @@ export function ResearchConfigPanel({
   locale,
   tools,
   aiAnalyses,
-  totalCost,
+  totalPrice,
   onKeywordChange,
+  onConfigChange,
   onGoToCheckout,
   disabled,
 }: ResearchConfigPanelProps) {
@@ -78,11 +83,8 @@ export function ResearchConfigPanel({
     );
   }
 
-  const hasEstimates = tools.some((tool) => tool.cost > 0);
-
   return (
     <div className="flex flex-col gap-3">
-      {/* Header */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">{t("summary")}</CardTitle>
@@ -95,7 +97,9 @@ export function ResearchConfigPanel({
           key={tool.toolId}
           tool={tool}
           locale={locale}
+          projectId={projectId}
           onKeywordChange={onKeywordChange}
+          onConfigChange={onConfigChange}
         />
       ))}
 
@@ -113,8 +117,8 @@ export function ResearchConfigPanel({
           <CardContent className="flex flex-wrap gap-1.5 pb-3">
             {aiAnalyses.map((a) => (
               <Badge key={a.type} variant="secondary" className="text-xs">
-                {AI_ANALYSIS_LABELS[a.type]?.[locale] ??
-                  AI_ANALYSIS_LABELS[a.type]?.en ??
+                {AI_LABELS[a.type]?.[locale] ??
+                  AI_LABELS[a.type]?.en ??
                   a.type}
               </Badge>
             ))}
@@ -122,7 +126,7 @@ export function ResearchConfigPanel({
         </Card>
       )}
 
-      {/* Cost summary + checkout */}
+      {/* Price + checkout */}
       <Card>
         <CardContent className="pb-0 pt-4">
           {tools.map((tool) => (
@@ -141,16 +145,21 @@ export function ResearchConfigPanel({
         </CardContent>
         <CardFooter className="flex flex-col gap-3 pt-3 border-t">
           <div className="flex w-full items-center justify-between">
-            <span className="text-sm font-medium">{t("estimatedTotal")}</span>
+            <div className="flex flex-col">
+              <span className="text-sm font-medium">{t("estimatedTotal")}</span>
+              <span className="text-[10px] text-muted-foreground">
+                {locale === "es" ? "(precio estimado)" : "(estimated price)"}
+              </span>
+            </div>
             <span className="text-lg font-bold">
-              {totalCost > 0 ? `$${totalCost.toFixed(2)}` : "—"}
+              {totalPrice > 0 ? `~$${totalPrice.toFixed(2)}` : "—"}
             </span>
           </div>
-          {hasEstimates && (
+          {totalPrice > 0 && (
             <Button
               className="w-full"
               size="lg"
-              disabled={disabled || totalCost <= 0}
+              disabled={disabled}
               onClick={onGoToCheckout}
             >
               {locale === "es" ? "Ir al checkout" : "Go to Checkout"}
@@ -167,15 +176,29 @@ export function ResearchConfigPanel({
 interface ToolCardProps {
   tool: PanelTool;
   locale: string;
+  projectId: string;
   onKeywordChange: (toolId: string, keywords: string[]) => void;
+  onConfigChange: (toolId: string, config: Record<string, unknown>) => void;
 }
 
-function ToolCard({ tool, locale, onKeywordChange }: ToolCardProps) {
+function ToolCard({
+  tool,
+  locale,
+  projectId,
+  onKeywordChange,
+  onConfigChange,
+}: ToolCardProps) {
   const t = useTranslations("chat");
   const [expanded, setExpanded] = useState(true);
   const [newKeyword, setNewKeyword] = useState("");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editValue, setEditValue] = useState("");
+
+  // Load schema for parameter controls
+  const schema = getToolSchema(tool.toolId);
+  const schemaParams = schema ? getChatbotParams(schema) : [];
+  // Filter out keyword_list params (shown separately above)
+  const editableParams = schemaParams.filter((p) => p.kind !== "keyword_list");
 
   const addKeyword = useCallback(() => {
     const trimmed = newKeyword.trim();
@@ -203,7 +226,6 @@ function ToolCard({ tool, locale, onKeywordChange }: ToolCardProps) {
     if (editingIndex === null) return;
     const trimmed = editValue.trim();
     if (!trimmed) {
-      // Empty → remove
       const updated = tool.keywords.filter((_, i) => i !== editingIndex);
       onKeywordChange(tool.toolId, updated);
     } else {
@@ -215,27 +237,12 @@ function ToolCard({ tool, locale, onKeywordChange }: ToolCardProps) {
     setEditValue("");
   }, [editingIndex, editValue, tool.toolId, tool.keywords, onKeywordChange]);
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        addKeyword();
-      }
+  const handleParamChange = useCallback(
+    (paramId: string, value: unknown) => {
+      const newConfig = { ...tool.config, [paramId]: value };
+      onConfigChange(tool.toolId, newConfig);
     },
-    [addKeyword]
-  );
-
-  const handleEditKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        commitEdit();
-      }
-      if (e.key === "Escape") {
-        setEditingIndex(null);
-      }
-    },
-    [commitEdit]
+    [tool.toolId, tool.config, onConfigChange]
   );
 
   return (
@@ -269,12 +276,12 @@ function ToolCard({ tool, locale, onKeywordChange }: ToolCardProps) {
       </CardHeader>
 
       {expanded && (
-        <CardContent className="pb-3">
-          {/* Keywords */}
+        <CardContent className="pb-3 space-y-3">
+          {/* Keywords section */}
           {tool.keywords.length > 0 && (
             <div className="flex flex-col gap-1.5">
               <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                {locale === "es" ? "Palabras clave" : "Keywords"}
+                Keywords
               </p>
               <div className="flex flex-wrap gap-1">
                 {tool.keywords.map((kw, i) =>
@@ -284,7 +291,10 @@ function ToolCard({ tool, locale, onKeywordChange }: ToolCardProps) {
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
                       onBlur={commitEdit}
-                      onKeyDown={handleEditKeyDown}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") { e.preventDefault(); commitEdit(); }
+                        if (e.key === "Escape") setEditingIndex(null);
+                      }}
                       autoFocus
                       className="h-6 w-32 text-[11px] px-1.5"
                     />
@@ -298,10 +308,7 @@ function ToolCard({ tool, locale, onKeywordChange }: ToolCardProps) {
                       {kw}
                       <button
                         type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeKeyword(kw);
-                        }}
+                        onClick={(e) => { e.stopPropagation(); removeKeyword(kw); }}
                         className="hover:text-destructive"
                       >
                         <X className="size-2.5" />
@@ -310,15 +317,12 @@ function ToolCard({ tool, locale, onKeywordChange }: ToolCardProps) {
                   )
                 )}
               </div>
-              {/* Add keyword input */}
-              <div className="flex items-center gap-1 mt-0.5">
+              <div className="flex items-center gap-1">
                 <Input
                   value={newKeyword}
                   onChange={(e) => setNewKeyword(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder={
-                    locale === "es" ? "Agregar keyword..." : "Add keyword..."
-                  }
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addKeyword(); } }}
+                  placeholder={locale === "es" ? "Agregar keyword..." : "Add keyword..."}
                   className="h-6 text-[11px] flex-1"
                 />
                 <Button
@@ -335,22 +339,34 @@ function ToolCard({ tool, locale, onKeywordChange }: ToolCardProps) {
             </div>
           )}
 
+          {/* Schema parameter controls */}
+          {editableParams.length > 0 && (
+            <>
+              <Separator />
+              <div className="flex flex-col gap-2">
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                  {locale === "es" ? "Configuracion" : "Configuration"}
+                </p>
+                {editableParams.map((param) => (
+                  <ParamInput
+                    key={param.id}
+                    param={param}
+                    value={tool.config[param.id] ?? param.defaultValue}
+                    onChange={(val) => handleParamChange(param.id, val)}
+                    locale={locale}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+
           {/* Results estimate */}
-          <div className="flex items-center justify-between text-xs text-muted-foreground mt-2 pt-2 border-t">
+          <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 border-t">
             <span>
               {tool.estimatedResults > 0
-                ? t("results", {
-                    count: tool.estimatedResults.toLocaleString(),
-                  })
+                ? t("results", { count: tool.estimatedResults.toLocaleString() })
                 : t("configuring")}
             </span>
-            {tool.costPerKeyword > 0 && (
-              <span>
-                {tool.keywords.length}{" "}
-                {locale === "es" ? "keywords" : "keywords"} ×{" "}
-                ${tool.costPerKeyword.toFixed(2)}
-              </span>
-            )}
           </div>
         </CardContent>
       )}

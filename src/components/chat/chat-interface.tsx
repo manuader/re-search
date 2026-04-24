@@ -10,6 +10,16 @@ import { MessageList } from "./message-list";
 import { ChatInput } from "./chat-input";
 import { ResearchConfigPanel } from "./research-config-panel";
 import { useTranslations } from "next-intl";
+import {
+  AI_COST_PER_ANALYSIS,
+  HAIKU_BATCH_INPUT_PER_MTOK,
+  HAIKU_BATCH_OUTPUT_PER_MTOK,
+  CHATBOT_FLAT_FEE_USD,
+  MIN_SAFETY_BUFFER_USD,
+  SAFETY_BUFFER_PERCENT,
+  MIN_PRICE_USD,
+  MARKUP_TIERS,
+} from "@/lib/pricing/constants";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -18,9 +28,10 @@ export interface PanelTool {
   name: string;
   healthStatus: string;
   estimatedResults: number;
-  cost: number;
+  cost: number; // raw scraping cost (from estimateCost/suggestKeywords)
   keywords: string[];
   costPerKeyword: number;
+  config: Record<string, unknown>;
 }
 
 export interface PanelAIAnalysis {
@@ -36,8 +47,6 @@ interface ChatInterfaceProps {
 }
 
 // ─── Tool output accessor ───────────────────────────────────────────────────
-// AI SDK v6 stores tool results in `output` property. This helper is
-// defensive: it also checks `result` in case of future SDK changes.
 
 function getToolOutput(part: unknown): Record<string, unknown> | null {
   const p = part as Record<string, unknown>;
@@ -57,9 +66,50 @@ function getToolInput(part: unknown): Record<string, unknown> | null {
   return null;
 }
 
-// ─── Extract structured data from all messages ──────────────────────────────
-// Scans every assistant message for tool parts and builds the panel state.
-// Multiple passes: first collect tools, then apply costs/keywords/configs.
+// ─── Estimate total price (mirrors quotePricing logic) ──────────────────────
+// Client-side approximation that includes AI costs, chatbot fee, buffer, and
+// markup so the panel estimate is close to what checkout will show.
+
+function estimateTotalPrice(
+  scrapingCost: number,
+  aiAnalyses: PanelAIAnalysis[],
+  totalEstimatedItems: number
+): number {
+  // AI analysis cost
+  let aiCost = 0;
+  for (const a of aiAnalyses) {
+    const spec =
+      AI_COST_PER_ANALYSIS[a.type as keyof typeof AI_COST_PER_ANALYSIS];
+    if (spec) {
+      aiCost +=
+        (spec.inputTokensPerItem * totalEstimatedItems * HAIKU_BATCH_INPUT_PER_MTOK) /
+          1_000_000 +
+        (spec.outputTokensPerItem * totalEstimatedItems * HAIKU_BATCH_OUTPUT_PER_MTOK) /
+          1_000_000;
+    }
+  }
+
+  const internalCost = scrapingCost + aiCost + CHATBOT_FLAT_FEE_USD;
+  const buffer = Math.max(MIN_SAFETY_BUFFER_USD, internalCost * SAFETY_BUFFER_PERCENT);
+
+  // Tiered markup
+  let multiplier = MARKUP_TIERS[MARKUP_TIERS.length - 1].multiplier;
+  for (const tier of MARKUP_TIERS) {
+    if (internalCost < tier.maxCost) {
+      multiplier = tier.multiplier;
+      break;
+    }
+  }
+
+  const rawPrice = (internalCost + buffer) * multiplier;
+  const rounded = Math.ceil(rawPrice * 100) / 100;
+  return Math.max(rounded, MIN_PRICE_USD);
+}
+
+// ─── Extract structured data from messages ──────────────────────────────────
+// Only adds tools to the panel when they have keywords (from suggestKeywords)
+// or were explicitly added via addToolToProject. searchTools results are
+// intentionally ignored — they're search results, not selected tools.
 
 function extractPanelData(messages: UIMessage[]) {
   const toolMap = new Map<string, PanelTool>();
@@ -79,32 +129,12 @@ function extractPanelData(messages: UIMessage[]) {
       const out = getToolOutput(part);
       if (!out) continue;
 
-      // ── searchTools: register tools ────────────────────────────────
-      if (name === "searchTools" && Array.isArray(out.results)) {
-        for (const r of out.results as Record<string, unknown>[]) {
-          if (!r || typeof r !== "object") continue;
-          const id = String(r.id ?? "");
-          if (!id || toolMap.has(id)) continue;
-          toolMap.set(id, {
-            toolId: id,
-            name: String(r.name ?? id),
-            healthStatus: String(r.healthStatus ?? "unknown"),
-            estimatedResults: 0,
-            cost: 0,
-            keywords: [],
-            costPerKeyword: 0,
-          });
-        }
-      }
-
-      // ── suggestKeywords: populate keywords + cost ───────────────────
+      // ── suggestKeywords: create/update tool with keywords + cost ────
       if (name === "suggestKeywords" && Array.isArray(out.keywords)) {
         const toolId = String(out.toolId ?? "");
         const toolName = String(out.toolName ?? toolId);
         if (!toolId) continue;
 
-        // Create tool if not yet seen (fallback for when searchTools
-        // returned the tool under a different query or wasn't called)
         if (!toolMap.has(toolId)) {
           toolMap.set(toolId, {
             toolId,
@@ -114,6 +144,7 @@ function extractPanelData(messages: UIMessage[]) {
             cost: 0,
             keywords: [],
             costPerKeyword: 0,
+            config: {},
           });
         }
 
@@ -138,12 +169,18 @@ function extractPanelData(messages: UIMessage[]) {
         }
       }
 
-      // ── updateProjectConfig: update cost from mapper ───────────────
+      // ── updateProjectConfig: update config + cost ──────────────────
       if (name === "updateProjectConfig" && out.ok === true) {
         const input = getToolInput(part);
         const toolId = input ? String(input.toolId ?? "") : "";
         if (toolId && toolMap.has(toolId)) {
           const tool = toolMap.get(toolId)!;
+          if (input?.config && typeof input.config === "object") {
+            tool.config = {
+              ...tool.config,
+              ...(input.config as Record<string, unknown>),
+            };
+          }
           if (out.effectiveResultCount) {
             tool.estimatedResults = Number(out.effectiveResultCount);
           }
@@ -166,13 +203,13 @@ function extractPanelData(messages: UIMessage[]) {
             cost: 0,
             keywords: [],
             costPerKeyword: 0,
+            config: {},
           });
         }
       }
 
       // ── suggestAIAnalysis: collect AI analyses ─────────────────────
       if (name === "suggestAIAnalysis" && Array.isArray(out.suggestions)) {
-        // Replace, don't append (chatbot may re-suggest)
         aiAnalyses.length = 0;
         for (const s of out.suggestions as Record<string, unknown>[]) {
           aiAnalyses.push({
@@ -190,9 +227,15 @@ function extractPanelData(messages: UIMessage[]) {
   }
 
   const tools = Array.from(toolMap.values());
-  const totalCost = tools.reduce((sum, t) => sum + t.cost, 0);
 
-  return { tools, totalCost, aiAnalyses, redirectUrl };
+  // Calculate total estimated price including AI analysis, buffer, markup
+  const scrapingCost = tools.reduce((sum, t) => sum + t.cost, 0);
+  const totalItems = tools.reduce((sum, t) => sum + t.estimatedResults, 0);
+  const totalPrice = scrapingCost > 0
+    ? estimateTotalPrice(scrapingCost, aiAnalyses, totalItems)
+    : 0;
+
+  return { tools, totalPrice, aiAnalyses, redirectUrl };
 }
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -206,23 +249,33 @@ export function ChatInterface({
   const t = useTranslations("chat");
   const router = useRouter();
   const [panelTools, setPanelTools] = useState<PanelTool[]>([]);
-  const [totalCost, setTotalCost] = useState(0);
+  const [totalPrice, setTotalPrice] = useState(0);
   const [aiAnalyses, setAiAnalyses] = useState<PanelAIAnalysis[]>([]);
   const [redirected, setRedirected] = useState(false);
 
-  const handleKeywordSelectionChange = useCallback(
-    (toolId: string, selected: string[]) => {
+  const handleKeywordChange = useCallback(
+    (toolId: string, keywords: string[]) => {
       setPanelTools((prev) =>
         prev.map((tool) => {
           if (tool.toolId !== toolId) return tool;
-          const newCost = selected.length * tool.costPerKeyword;
           return {
             ...tool,
-            keywords: selected,
-            cost: newCost,
-            estimatedResults: selected.length * 100,
+            keywords,
+            cost: keywords.length * tool.costPerKeyword,
+            estimatedResults: keywords.length * 100,
           };
         })
+      );
+    },
+    []
+  );
+
+  const handleConfigChange = useCallback(
+    (toolId: string, config: Record<string, unknown>) => {
+      setPanelTools((prev) =>
+        prev.map((tool) =>
+          tool.toolId === toolId ? { ...tool, config } : tool
+        )
       );
     },
     []
@@ -236,13 +289,13 @@ export function ChatInterface({
     messages: initialMessages,
   });
 
-  // Scan all messages for structured data whenever messages change
+  // Extract panel data from messages
   useEffect(() => {
     const data = extractPanelData(messages);
 
     if (data.tools.length > 0) {
       setPanelTools(data.tools);
-      setTotalCost(data.totalCost);
+      setTotalPrice(data.totalPrice);
     }
     if (data.aiAnalyses.length > 0) {
       setAiAnalyses(data.aiAnalyses);
@@ -255,29 +308,33 @@ export function ChatInterface({
     }
   }, [messages, redirected, router]);
 
-  // Recalculate total cost when panel tools change
+  // Recalculate price when tools or AI analyses change from user edits
   useEffect(() => {
-    const total = panelTools.reduce((sum, t) => sum + t.cost, 0);
-    setTotalCost(total);
-  }, [panelTools]);
+    const scrapingCost = panelTools.reduce((sum, t) => sum + t.cost, 0);
+    const totalItems = panelTools.reduce((sum, t) => sum + t.estimatedResults, 0);
+    if (scrapingCost > 0) {
+      setTotalPrice(estimateTotalPrice(scrapingCost, aiAnalyses, totalItems));
+    } else {
+      setTotalPrice(0);
+    }
+  }, [panelTools, aiAnalyses]);
 
   const isDisabled =
     status === "streaming" ||
     status === "submitted" ||
     projectStatus === "completed";
 
-  function handleSend(text: string) {
-    sendMessage({ text });
-  }
-
   return (
     <div className="flex h-full min-h-0 flex-col lg:flex-row lg:gap-4 p-4">
       <div className="flex flex-1 flex-col min-h-0 rounded-xl border bg-card overflow-hidden">
         <MessageList
           messages={messages}
-          onKeywordSelectionChange={handleKeywordSelectionChange}
+          onKeywordSelectionChange={handleKeywordChange}
         />
-        <ChatInput onSend={handleSend} disabled={isDisabled} />
+        <ChatInput
+          onSend={(text) => sendMessage({ text })}
+          disabled={isDisabled}
+        />
       </div>
 
       <div className="w-full shrink-0 lg:w-80 lg:overflow-y-auto mt-4 lg:mt-0">
@@ -286,8 +343,9 @@ export function ChatInterface({
           locale={locale}
           tools={panelTools}
           aiAnalyses={aiAnalyses}
-          totalCost={totalCost}
-          onKeywordChange={handleKeywordSelectionChange}
+          totalPrice={totalPrice}
+          onKeywordChange={handleKeywordChange}
+          onConfigChange={handleConfigChange}
           onGoToCheckout={() => {
             router.push(`/${locale}/projects/${projectId}/checkout`);
           }}

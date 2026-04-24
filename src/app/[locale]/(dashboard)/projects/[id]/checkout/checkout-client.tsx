@@ -117,7 +117,8 @@ export function CheckoutClient({
   const reportTypes: ReportType[] = ["none", "executive", "professional", "technical"];
 
   return (
-    <div className="mx-auto max-w-2xl p-6 space-y-6">
+    <div className="h-full overflow-y-auto">
+    <div className="mx-auto max-w-2xl p-6 space-y-6 pb-12">
       <div>
         <h1 className="text-2xl font-semibold">{t("title")}</h1>
         <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
@@ -283,6 +284,7 @@ export function CheckoutClient({
       <p className="text-xs text-center text-muted-foreground">
         {t("disclaimer")}
       </p>
+    </div>
     </div>
   );
 }

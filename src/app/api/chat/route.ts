@@ -65,15 +65,39 @@ export async function POST(req: Request) {
     messages: await convertToModelMessages(messages),
     tools,
     stopWhen: stepCountIs(5),
-    onFinish: async ({ text }) => {
-      // Save assistant response to DB
-      if (text) {
-        await supabase.from("chat_messages").insert({
-          project_id: projectId,
-          role: "assistant",
-          content: text,
-        });
+    onFinish: async ({ text, steps }) => {
+      // Collect tool invocations from all steps
+      const toolInvocations: Array<{
+        toolName: string;
+        input: unknown;
+        output: unknown;
+      }> = [];
+
+      for (const step of steps) {
+        if (step.toolCalls && step.toolResults) {
+          for (const tc of step.toolCalls) {
+            const tcAny = tc as Record<string, unknown>;
+            const tr = step.toolResults.find(
+              (r) => (r as Record<string, unknown>).toolCallId === tcAny.toolCallId
+            );
+            const trAny = tr as Record<string, unknown> | undefined;
+            toolInvocations.push({
+              toolName: String(tcAny.toolName ?? ""),
+              input: tcAny.args ?? tcAny.input ?? null,
+              output: trAny?.result ?? trAny?.output ?? null,
+            });
+          }
+        }
       }
+
+      // Save assistant response with tool invocations
+      await supabase.from("chat_messages").insert({
+        project_id: projectId,
+        role: "assistant",
+        content: text || "",
+        tool_invocations:
+          toolInvocations.length > 0 ? toolInvocations : null,
+      });
     },
   });
 
