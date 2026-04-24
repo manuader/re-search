@@ -10,10 +10,11 @@ export default async function CheckoutPendingPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ order_id?: string }>;
+  searchParams: Promise<{ order_id?: string; external_reference?: string }>;
 }) {
   const { locale } = await params;
-  const { order_id: orderId } = await searchParams;
+  const sp = await searchParams;
+  const orderId = sp.order_id ?? sp.external_reference;
   const t = await getTranslations("checkout.pending");
 
   const supabase = await createClient();

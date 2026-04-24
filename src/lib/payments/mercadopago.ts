@@ -93,9 +93,9 @@ export async function createOrderPreference({
         },
       ],
       back_urls: {
-        success: `${appUrl}/${locale}/checkout/success?order_id=${orderId}`,
-        failure: `${appUrl}/${locale}/checkout/failure?order_id=${orderId}`,
-        pending: `${appUrl}/${locale}/checkout/pending?order_id=${orderId}`,
+        success: `${appUrl}/${locale}/checkout/success`,
+        failure: `${appUrl}/${locale}/checkout/failure`,
+        pending: `${appUrl}/${locale}/checkout/pending`,
       },
       auto_return: "approved",
       notification_url: `${appUrl}/api/webhooks/mercadopago`,
