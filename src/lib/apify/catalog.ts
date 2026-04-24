@@ -123,9 +123,10 @@ export const toolCatalog: ToolCatalogEntry[] = [
     },
     pairsWellWith: ["google-maps-reviews", "contact-extractor"],
     maintainer: "compass",
+    schemaId: "google-maps",
   },
 
-  // ─── 2. Google Maps Reviews ───────────────────────────────────────────
+  // ─── 2. Google Maps Reviews ─────────────────────────────────────────── ───────────────────────────────────────────
   {
     id: "google-maps-reviews",
     actorId: "compass/google-maps-reviews",
@@ -235,6 +236,7 @@ export const toolCatalog: ToolCatalogEntry[] = [
     },
     pairsWellWith: ["google-maps"],
     maintainer: "compass",
+    schemaId: "google-maps-reviews",
   },
 
   // ─── 3. Twitter / X Search ────────────────────────────────────────────
@@ -344,6 +346,7 @@ export const toolCatalog: ToolCatalogEntry[] = [
     },
     pairsWellWith: ["reddit", "google-search"],
     maintainer: "apidojo",
+    schemaId: "twitter",
   },
 
   // ─── 4. Reddit ────────────────────────────────────────────────────────
@@ -453,6 +456,7 @@ export const toolCatalog: ToolCatalogEntry[] = [
     },
     pairsWellWith: ["twitter", "google-search"],
     maintainer: "trudax",
+    schemaId: "reddit",
   },
 
   // ─── 5. Google Search ─────────────────────────────────────────────────
@@ -557,6 +561,7 @@ export const toolCatalog: ToolCatalogEntry[] = [
     },
     pairsWellWith: ["web-crawler", "contact-extractor"],
     maintainer: "apify",
+    schemaId: "google-search",
   },
 
   // ─── 6. Web Crawler ───────────────────────────────────────────────────
@@ -665,6 +670,7 @@ export const toolCatalog: ToolCatalogEntry[] = [
     },
     pairsWellWith: ["google-search", "contact-extractor"],
     maintainer: "apify",
+    schemaId: "web-crawler",
   },
 
   // ─── 7. Instagram ─────────────────────────────────────────────────────
@@ -774,6 +780,7 @@ export const toolCatalog: ToolCatalogEntry[] = [
     },
     pairsWellWith: ["twitter", "google-search"],
     maintainer: "apify",
+    schemaId: "instagram",
   },
 
   // ─── 8. TripAdvisor ───────────────────────────────────────────────────
@@ -887,6 +894,7 @@ export const toolCatalog: ToolCatalogEntry[] = [
     },
     pairsWellWith: ["google-maps", "google-maps-reviews"],
     maintainer: "maxcopell",
+    schemaId: "tripadvisor",
   },
 
   // ─── 9. Amazon Products ───────────────────────────────────────────────
@@ -994,6 +1002,7 @@ export const toolCatalog: ToolCatalogEntry[] = [
     },
     pairsWellWith: ["google-search"],
     maintainer: "junglee",
+    schemaId: "amazon-products",
   },
 
   // ─── 10. Contact Extractor ────────────────────────────────────────────
@@ -1103,6 +1112,7 @@ export const toolCatalog: ToolCatalogEntry[] = [
     },
     pairsWellWith: ["google-maps", "web-crawler", "google-search"],
     maintainer: "vdrmota",
+    schemaId: "contact-extractor",
   },
 
   // ─── 11. LinkedIn Jobs ────────────────────────────────────────────────
@@ -1210,6 +1220,7 @@ export const toolCatalog: ToolCatalogEntry[] = [
     },
     pairsWellWith: ["linkedin-profiles"],
     maintainer: "bebity",
+    schemaId: "linkedin-jobs",
   },
 
   // ─── 12. LinkedIn Profiles ────────────────────────────────────────────
@@ -1321,6 +1332,7 @@ export const toolCatalog: ToolCatalogEntry[] = [
     },
     pairsWellWith: ["linkedin-jobs", "contact-extractor"],
     maintainer: "dev_fusion",
+    schemaId: "linkedin-profiles",
   },
 
   // ─── 13. Tweets (by user/URL) ─────────────────────────────────────────
@@ -1428,6 +1440,7 @@ export const toolCatalog: ToolCatalogEntry[] = [
     },
     pairsWellWith: ["twitter", "reddit"],
     maintainer: "apidojo",
+    schemaId: "tweets",
   },
 ];
 

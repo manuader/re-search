@@ -1,6 +1,6 @@
 # ResearchBot — Application State
 
-> Last updated: 2026-04-23  
+> Last updated: 2026-04-24  
 > This document is the single source of truth for the current state of the app. The original `PRD.md` and `idea.md` in this repo are outdated and should NOT be trusted for implementation details.
 
 ---
@@ -42,7 +42,8 @@ ResearchBot is a web platform where users describe a research objective in a cha
 ```
 User → Next.js App (Vercel)
          ├── Chat UI → /api/chat → Claude Haiku (streaming)
-         ├── Chat Tools → configure scraping jobs + AI analysis
+         ├── Chat Tools → configure scraping jobs + AI analysis (9 tools)
+         ├── Config Panel → PATCH /api/projects/[id]/config → validate + estimate
          ├── Checkout → /api/orders → Mercado Pago preference
          ├── MP Webhook → /api/webhooks/mercadopago → order status update
          │
@@ -64,7 +65,7 @@ User → Next.js App (Vercel)
 
 ---
 
-## Database Schema (8 migrations applied)
+## Database Schema (9 migrations applied)
 
 ### Core Tables
 
@@ -73,7 +74,7 @@ User → Next.js App (Vercel)
 | `profiles` | User accounts (extends auth.users) | id, email, display_name, locale, is_admin, admin_granted_at, created_at |
 | `research_projects` | Research projects | id, user_id, title, description, status, current_order_id, total_actual_cost, created_at |
 | `chat_messages` | Conversation history | id, project_id, role, content, tool_invocations (JSONB), created_at |
-| `scraping_jobs` | Individual scraping tasks | id, project_id, tool_id, tool_name, actor_input, estimated/actual_results, estimated/actual_cost, status, quality_score, validation_report |
+| `scraping_jobs` | Individual scraping tasks | id, project_id, tool_id, tool_name, actor_input, estimated/actual_results, estimated/actual_cost, status, quality_score, validation_report, bucket_label, parent_job_id |
 | `raw_data` | Scraped data items | id, project_id, job_id, source, content (JSONB), ai_fields (JSONB) |
 | `ai_analysis_configs` | AI enrichment configurations | id, project_id, analysis_type, config, estimated/actual_cost, status, batch_id |
 | `reports` | Generated HTML reports | id, project_id, title, html_content, file_url, quality_flag |
@@ -225,6 +226,42 @@ Each tool has:
 - Pricing model (per-result or per-page) with min/max costs
 - Health check configuration
 - Validation rules (required fields, unique key)
+- Optional `schemaId` linking to rich `ToolSchema` in `src/lib/apify/schemas/`
+
+### Tool Schema System (new)
+
+Located in `src/lib/apify/tool-schema.ts` + `src/lib/apify/schemas/` + `src/lib/apify/mappers/`.
+
+All 13 tools have rich parameter schemas. i18n complete for all 5 locales (en, es, pt, fr, de).
+
+**Type system** (`tool-schema.ts`):
+- `ParamKind`: text, number, boolean, enum, multi_enum, date_range, date_distribution, geo, keyword_list
+- `ParamImportance`: critical (always ask), high (ask unless implied), medium (show in panel), low (advanced only)
+- `ToolParam`: id, apifyField, kind, importance, advanced flag, validation constraints, volumeMultiplier
+- `ParamGroup`: logical grouping of params (rendered as sections in UI)
+- `ToolSchema`: toolId, version, paramGroups, crossValidate, clarifyingQuestions
+- Helper functions: `getAllParams()`, `getChatbotParams()`, `getSchemaDefaults()`, `validateConfig()`
+
+**Schemas** (`schemas/`):
+| Tool | Params | Groups | Clarifying Questions |
+|---|---|---|---|
+| Twitter | 17 | search, temporal, filters, engagement, geographic, volume | temporal_scope, language_preference, engagement_filter |
+| Google Maps Reviews | 8 | source, filters, volume, privacy | review_date_range, review_sort |
+| Google Search | 6 | query, locale, volume, options | search_country |
+| Reddit | 10 | search, content, temporal, volume, advanced | subreddit_scope, reddit_time_period |
+| Google Maps | 7 | search, filters, enrichment, volume | geographic_scope |
+| Instagram | 6 | source, content, volume | source_type |
+| TripAdvisor | 9 | source, content, locale, dates, volume | language_preference |
+| Amazon Products | 4 | search, locale, content, volume | marketplace |
+| Web Crawler | 4 | source, options, volume | — |
+| Contact Extractor | 4 | source, options | — |
+| LinkedIn Jobs | 4 | search, options, volume | job_location |
+| LinkedIn Profiles | 4 | source, content, volume | — |
+| Tweets (by user) | 4 | source, filters, volume | — |
+
+**Mappers** (`mappers/`): One dedicated mapper per tool (13 total) + `defaultMapper` for backward compat. Transform user-facing config (paramId-keyed) into Apify actor input (apifyField-keyed). Each mapper returns `{ actorInput, effectiveResultCount, warnings }`.
+
+**Date Distribution**: Twitter schema includes a `dateDistribution` param (kind: `date_distribution`) that lets users split scraping into temporal buckets. When configured, `executeResearch` creates a parent job + N child jobs in `scraping_jobs` (linked via `parent_job_id`). The Inngest `execute-research` function skips parent jobs and processes children sequentially with per-bucket cost cap checks.
 
 ### Execution Flow (Inngest `execute-research`)
 
@@ -352,7 +389,7 @@ A/B testing infrastructure ready (`getExperimentVariant()` deterministic hash) b
 
 ---
 
-## Tests (99 passing)
+## Tests (381 passing)
 
 | Suite | Tests | Coverage |
 |---|---|---|
@@ -361,6 +398,9 @@ A/B testing infrastructure ready (`getExperimentVariant()` deterministic hash) b
 | Report stats | 33 | mean, median, percentile, edge cases |
 | Report sampling | 12 | Sample size determination, stratified sampling |
 | Report summary | 16 | Dataset summary building, field detection |
+| Apify mappers + schemas | 100 | All mappers, defaultMapper, schema helpers, structural integrity (param labels, enum options, cross-validation, clarifying question references) |
+| Regression guard | 117 | All 13 catalog tools: has schema, has mapper, has schemaId, locale labels, enum options, clarifying question refs, mapper output validity |
+| i18n completeness | 65 | All 13 schemas: every param label/description, group label, enum option label, clarifying question in all 5 locales |
 
 No E2E, integration, or component tests yet.
 
@@ -386,20 +426,23 @@ src/
       analytics/       — client event tracking
       export/          — project data export
       payments/        — legacy credit purchase preference
-      projects/        — project CRUD
+      projects/        — project CRUD + PATCH /[id]/config (param validation + pricing)
   components/
     admin/             — admin-specific (sidebar, kpi-card, status-badge)
     billing/           — billing client (order history)
-    chat/              — chat interface, input, messages, tools, keywords, costs
+    chat/              — chat interface, input, messages, tools, keywords, config panel
+      param-inputs/    — 9 renderers by ParamKind (text, number, boolean, enum, multi_enum, date_range, keyword_list, geo, index)
     dashboard/         — user sidebar
     project/           — data table, export, progress tracker, report viewer
-    ui/                — 15 shadcn primitives
+    ui/                — 19 shadcn primitives (added: select, switch, accordion, collapsible)
   hooks/               — useRealtimeProgress
   lib/
     admin/             — guard, audit, types, response helpers
-    ai/                — chat tools, enrichment, system prompt
+    ai/                — chat tools (9), enrichment, system prompt (parameter-aware)
     analytics/         — event tracking, experiments
-    apify/             — catalog (13 tools), client, validator
+    apify/             — catalog (13 tools), client, validator, tool-schema types
+      schemas/         — rich param schemas (all 13 tools, 5-locale i18n)
+      mappers/         — config-to-Apify-input mappers (all 13 tools + defaultMapper)
     export/            — excel generation, data flattening
     inngest/           — client + 8 functions
     orders/            — state machine
@@ -413,7 +456,7 @@ src/
   middleware.ts        — auth guards, admin guards, rate limiting, i18n
 
 supabase/
-  migrations/          — 8 SQL migration files
+  migrations/          — 9 SQL migration files
   config.toml          — local dev config
 
 __tests__/
@@ -421,6 +464,7 @@ __tests__/
     pricing/           — quotePricing tests
     orders/            — state machine tests
     reports/           — stats, sampling, summary tests
+    apify/             — mapper tests, regression guard, i18n completeness
 ```
 
 ---

@@ -6,9 +6,12 @@ import { useTranslations } from "next-intl";
 const toolKeyMap: Record<string, { loading: string; done: string }> = {
   searchTools: { loading: "toolStatus.searchingTools", done: "toolStatus.searchedTools" },
   getToolConfig: { loading: "toolStatus.loadingConfig", done: "toolStatus.loadedConfig" },
+  getToolSchema: { loading: "toolStatus.loadingSchema", done: "toolStatus.loadedSchema" },
   estimateCost: { loading: "toolStatus.calculatingCosts", done: "toolStatus.calculatedCosts" },
   suggestKeywords: { loading: "toolStatus.generatingKeywords", done: "toolStatus.generatedKeywords" },
   suggestAIAnalysis: { loading: "toolStatus.analyzingOptions", done: "toolStatus.analyzedOptions" },
+  updateProjectConfig: { loading: "toolStatus.updatingConfig", done: "toolStatus.updatedConfig" },
+  addToolToProject: { loading: "toolStatus.addingTool", done: "toolStatus.addedTool" },
   executeResearch: { loading: "toolStatus.executingResearch", done: "toolStatus.executedResearch" },
 };
 

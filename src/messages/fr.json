@@ -38,6 +38,26 @@
       "failed": "Échoué"
     }
   },
+  "chat": {
+    "placeholder": "Decrivez votre objectif de recherche...",
+    "emptyState": "Decrivez votre objectif de recherche et je vous suggererai des outils avec des estimations de cout",
+    "confirmStart": "Confirmer. Lancer la recherche maintenant.",
+    "summary": "Resume de la recherche",
+    "configuring": "Configuration...",
+    "estimatedTotal": "Total estime",
+    "startResearch": "Lancer la recherche",
+    "starting": "Lancement...",
+    "results": "~{count} resultats",
+    "showAdvanced": "Options avancees",
+    "toolStatus": {
+      "loadingSchema": "Chargement des parametres...",
+      "loadedSchema": "Parametres charges",
+      "updatingConfig": "Mise a jour de la configuration...",
+      "updatedConfig": "Configuration mise a jour",
+      "addingTool": "Ajout de l'outil...",
+      "addedTool": "Outil ajoute"
+    }
+  },
   "billing": {
     "title": "Facturation",
     "tabs": {

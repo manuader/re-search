@@ -57,6 +57,8 @@ export interface ToolCatalogEntry {
   validation: ToolValidation;
   pairsWellWith: string[];
   maintainer: string;
+  /** Links to a rich ToolSchema in the schema registry. Undefined = legacy. */
+  schemaId?: string;
 }
 
 export interface CostEstimate {

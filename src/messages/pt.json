@@ -38,6 +38,26 @@
       "failed": "Falhou"
     }
   },
+  "chat": {
+    "placeholder": "Descreva seu objetivo de pesquisa...",
+    "emptyState": "Descreva seu objetivo de pesquisa e eu vou sugerir ferramentas com estimativas de custo",
+    "confirmStart": "Confirmar. Iniciar a pesquisa agora.",
+    "summary": "Resumo da pesquisa",
+    "configuring": "Configurando...",
+    "estimatedTotal": "Total estimado",
+    "startResearch": "Iniciar pesquisa",
+    "starting": "Iniciando...",
+    "results": "~{count} resultados",
+    "showAdvanced": "Opcoes avancadas",
+    "toolStatus": {
+      "loadingSchema": "Carregando parametros...",
+      "loadedSchema": "Parametros carregados",
+      "updatingConfig": "Atualizando configuracao...",
+      "updatedConfig": "Configuracao atualizada",
+      "addingTool": "Adicionando ferramenta...",
+      "addedTool": "Ferramenta adicionada"
+    }
+  },
   "billing": {
     "title": "Faturamento",
     "tabs": {

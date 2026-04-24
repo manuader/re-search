@@ -100,6 +100,8 @@ export const executeResearch = inngest.createFunction(
     });
 
     // ── Fetch scraping jobs ──────────────────────────────────────────
+    // Skip parent jobs (bucket_label = '__parent__') — they are containers
+    // for date distribution sub-jobs and don't run an Apify actor.
     const jobs = await step.run("fetch-jobs", async () => {
       const { data, error } = await supabase
         .from("scraping_jobs")
@@ -110,7 +112,10 @@ export const executeResearch = inngest.createFunction(
         throw new NonRetriableError(`Failed to fetch scraping jobs: ${error.message}`);
       }
 
-      return data ?? [];
+      const allJobs = data ?? [];
+      return allJobs.filter(
+        (j: Record<string, unknown>) => j.bucket_label !== "__parent__"
+      );
     });
 
     // ── Cost cap helper ──────────────────────────────────────────────
@@ -296,6 +301,50 @@ export const executeResearch = inngest.createFunction(
         return { projectId, orderId, status: "completed_partial", capTriggered: true };
       }
     }
+
+    // ── Mark parent jobs as completed ─────────────────────────────
+    // If any date distribution sub-jobs were processed, update their parent.
+    await step.run("finalize-parent-jobs", async () => {
+      const { data: parentJobs } = await supabase
+        .from("scraping_jobs")
+        .select("id")
+        .eq("project_id", projectId)
+        .eq("bucket_label", "__parent__");
+
+      if (!parentJobs || parentJobs.length === 0) return;
+
+      for (const parent of parentJobs) {
+        // Aggregate children stats
+        const { data: children } = await supabase
+          .from("scraping_jobs")
+          .select("actual_results, actual_cost, status")
+          .eq("parent_job_id", parent.id);
+
+        const totalResults = (children ?? []).reduce(
+          (s, c) => s + (Number(c.actual_results) || 0),
+          0
+        );
+        const totalCost = (children ?? []).reduce(
+          (s, c) => s + (Number(c.actual_cost) || 0),
+          0
+        );
+        const allCompleted = (children ?? []).every(
+          (c) => c.status === "completed" || c.status === "failed"
+        );
+
+        if (allCompleted) {
+          await supabase
+            .from("scraping_jobs")
+            .update({
+              status: "completed",
+              actual_results: totalResults,
+              actual_cost: totalCost,
+              completed_at: new Date().toISOString(),
+            })
+            .eq("id", parent.id);
+        }
+      }
+    });
 
     // ── AI analysis ─────────────────────────────────────────────────
     const analysisConfigs = await step.run("check-ai-analysis", async () => {

@@ -93,6 +93,7 @@
     "startResearch": "Start Research",
     "starting": "Starting...",
     "results": "~{count} results",
+    "showAdvanced": "Advanced options",
     "toolStatus": {
       "searchingTools": "Searching tools...",
       "searchedTools": "Searched tools",
@@ -106,6 +107,12 @@
       "analyzedOptions": "Analyzed options",
       "executingResearch": "Executing research...",
       "executedResearch": "Executed research",
+      "loadingSchema": "Loading parameters...",
+      "loadedSchema": "Parameters loaded",
+      "updatingConfig": "Updating configuration...",
+      "updatedConfig": "Configuration updated",
+      "addingTool": "Adding tool...",
+      "addedTool": "Tool added",
       "running": "Running {tool}...",
       "completed": "Completed {tool}",
       "error": "Error"

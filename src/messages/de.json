@@ -38,6 +38,26 @@
       "failed": "Fehlgeschlagen"
     }
   },
+  "chat": {
+    "placeholder": "Beschreiben Sie Ihr Forschungsziel...",
+    "emptyState": "Beschreiben Sie Ihr Forschungsziel und ich schlage Werkzeuge mit Kostenschatzungen vor",
+    "confirmStart": "Bestatigen. Forschung jetzt starten.",
+    "summary": "Forschungszusammenfassung",
+    "configuring": "Konfigurierung...",
+    "estimatedTotal": "Geschatzter Gesamtbetrag",
+    "startResearch": "Forschung starten",
+    "starting": "Wird gestartet...",
+    "results": "~{count} Ergebnisse",
+    "showAdvanced": "Erweiterte Optionen",
+    "toolStatus": {
+      "loadingSchema": "Parameter werden geladen...",
+      "loadedSchema": "Parameter geladen",
+      "updatingConfig": "Konfiguration wird aktualisiert...",
+      "updatedConfig": "Konfiguration aktualisiert",
+      "addingTool": "Werkzeug wird hinzugefugt...",
+      "addedTool": "Werkzeug hinzugefugt"
+    }
+  },
   "billing": {
     "title": "Abrechnung",
     "tabs": {

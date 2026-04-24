@@ -1,21 +1,26 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isToolUIPart, getToolName } from "ai";
 import type { UIMessage } from "ai";
 import type { Locale } from "@/types";
+import type { ToolSchema } from "@/lib/apify/tool-schema";
 import { MessageList } from "./message-list";
 import { ChatInput } from "./chat-input";
-import { CostCard } from "./cost-card";
+import { ResearchConfigPanel } from "./research-config-panel";
 import { useTranslations } from "next-intl";
 
-interface SelectedTool {
+// ─── Types ──────────────────────────────────────────────────────────────────
+
+interface ConfiguredTool {
   toolId: string;
   name: string;
   healthStatus: string;
   estimatedResults: number;
   cost: number;
+  schema?: ToolSchema;
+  config: Record<string, unknown>;
 }
 
 interface ChatInterfaceProps {
@@ -25,10 +30,13 @@ interface ChatInterfaceProps {
   projectStatus: string;
 }
 
+// ─── Tool data extraction from messages ─────────────────────────────────────
+
 function extractToolData(messages: UIMessage[]) {
-  const tools: SelectedTool[] = [];
+  const tools: ConfiguredTool[] = [];
   const costs: Record<string, { cost: number; resultCount: number }> = {};
   const keywords: Record<string, { count: number; costPerKeyword: number }> = {};
+  const configs: Record<string, Record<string, unknown>> = {};
 
   for (const message of messages) {
     if (message.role !== "assistant") continue;
@@ -56,6 +64,7 @@ function extractToolData(messages: UIMessage[]) {
                 healthStatus: String(item.healthStatus ?? "unknown"),
                 estimatedResults: 0,
                 cost: 0,
+                config: {},
               });
             }
           }
@@ -83,15 +92,35 @@ function extractToolData(messages: UIMessage[]) {
           costs[toolId] = { cost: Number(out.expected ?? 0), resultCount };
         }
       }
+
+      // Extract config from updateProjectConfig
+      if (name === "updateProjectConfig" && "ok" in out && out.ok === true) {
+        const input = "input" in part ? (part as { input: unknown }).input as Record<string, unknown> : null;
+        const toolId = input ? String(input.toolId ?? "") : "";
+        const config = input?.config as Record<string, unknown> | undefined;
+        if (toolId && config) {
+          configs[toolId] = config;
+        }
+        if (toolId && out.effectiveResultCount) {
+          const estimate = out.estimate as Record<string, unknown> | undefined;
+          costs[toolId] = {
+            cost: Number(estimate?.expected ?? 0),
+            resultCount: Number(out.effectiveResultCount),
+          };
+        }
+      }
     }
   }
 
-  // Apply costs to tools
+  // Apply costs and configs to tools
   for (const tool of tools) {
     const c = costs[tool.toolId];
     if (c) {
       tool.cost = c.cost;
       tool.estimatedResults = c.resultCount;
+    }
+    if (configs[tool.toolId]) {
+      tool.config = configs[tool.toolId];
     }
   }
 
@@ -100,6 +129,8 @@ function extractToolData(messages: UIMessage[]) {
   return { tools, totalCost, keywords };
 }
 
+// ─── Component ──────────────────────────────────────────────────────────────
+
 export function ChatInterface({
   projectId,
   locale,
@@ -107,7 +138,7 @@ export function ChatInterface({
   projectStatus,
 }: ChatInterfaceProps) {
   const t = useTranslations("chat");
-  const [selectedTools, setSelectedTools] = useState<SelectedTool[]>([]);
+  const [selectedTools, setSelectedTools] = useState<ConfiguredTool[]>([]);
   const [totalCost, setTotalCost] = useState(0);
   const [keywordCosts, setKeywordCosts] = useState<Record<string, { count: number; costPerKeyword: number }>>({});
 
@@ -126,6 +157,17 @@ export function ChatInterface({
       return updated;
     });
   }, []);
+
+  const handleConfigChange = useCallback(
+    (toolId: string, config: Record<string, unknown>) => {
+      setSelectedTools((prev) =>
+        prev.map((tool) =>
+          tool.toolId === toolId ? { ...tool, config } : tool
+        )
+      );
+    },
+    []
+  );
 
   const { messages, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({
@@ -160,13 +202,16 @@ export function ChatInterface({
       </div>
 
       <div className="w-full shrink-0 lg:w-72 lg:overflow-y-auto mt-4 lg:mt-0">
-        <CostCard
+        <ResearchConfigPanel
+          projectId={projectId}
+          locale={locale}
           tools={selectedTools}
+          onConfigChange={handleConfigChange}
           totalCost={totalCost}
-          disabled={isDisabled}
           onStartResearch={() => {
             sendMessage({ text: t("confirmStart") });
           }}
+          disabled={isDisabled}
         />
       </div>
     </div>

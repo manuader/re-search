@@ -93,6 +93,7 @@
     "startResearch": "Iniciar investigacion",
     "starting": "Iniciando...",
     "results": "~{count} resultados",
+    "showAdvanced": "Opciones avanzadas",
     "toolStatus": {
       "searchingTools": "Buscando herramientas...",
       "searchedTools": "Herramientas encontradas",
@@ -106,6 +107,12 @@
       "analyzedOptions": "Opciones analizadas",
       "executingResearch": "Ejecutando investigacion...",
       "executedResearch": "Investigacion ejecutada",
+      "loadingSchema": "Cargando parametros...",
+      "loadedSchema": "Parametros cargados",
+      "updatingConfig": "Actualizando configuracion...",
+      "updatedConfig": "Configuracion actualizada",
+      "addingTool": "Agregando herramienta...",
+      "addedTool": "Herramienta agregada",
       "running": "Ejecutando {tool}...",
       "completed": "Completado {tool}",
       "error": "Error"
