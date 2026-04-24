@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isToolUIPart, getToolName } from "ai";
 import type { UIMessage } from "ai";
 import type { Locale } from "@/types";
-import type { ToolSchema } from "@/lib/apify/tool-schema";
 import { MessageList } from "./message-list";
 import { ChatInput } from "./chat-input";
 import { ResearchConfigPanel } from "./research-config-panel";
@@ -13,14 +13,19 @@ import { useTranslations } from "next-intl";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-interface ConfiguredTool {
+export interface PanelTool {
   toolId: string;
   name: string;
   healthStatus: string;
   estimatedResults: number;
   cost: number;
-  schema?: ToolSchema;
-  config: Record<string, unknown>;
+  keywords: string[];
+  costPerKeyword: number;
+}
+
+export interface PanelAIAnalysis {
+  type: string;
+  description: string;
 }
 
 interface ChatInterfaceProps {
@@ -30,13 +35,36 @@ interface ChatInterfaceProps {
   projectStatus: string;
 }
 
-// ─── Tool data extraction from messages ─────────────────────────────────────
+// ─── Tool output accessor ───────────────────────────────────────────────────
+// AI SDK v6 stores tool results in `output` property. This helper is
+// defensive: it also checks `result` in case of future SDK changes.
 
-function extractToolData(messages: UIMessage[]) {
-  const tools: ConfiguredTool[] = [];
-  const costs: Record<string, { cost: number; resultCount: number }> = {};
-  const keywords: Record<string, { count: number; costPerKeyword: number }> = {};
-  const configs: Record<string, Record<string, unknown>> = {};
+function getToolOutput(part: unknown): Record<string, unknown> | null {
+  const p = part as Record<string, unknown>;
+  const raw = p.output ?? p.result ?? null;
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    return raw as Record<string, unknown>;
+  }
+  return null;
+}
+
+function getToolInput(part: unknown): Record<string, unknown> | null {
+  const p = part as Record<string, unknown>;
+  const raw = p.input ?? null;
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    return raw as Record<string, unknown>;
+  }
+  return null;
+}
+
+// ─── Extract structured data from all messages ──────────────────────────────
+// Scans every assistant message for tool parts and builds the panel state.
+// Multiple passes: first collect tools, then apply costs/keywords/configs.
+
+function extractPanelData(messages: UIMessage[]) {
+  const toolMap = new Map<string, PanelTool>();
+  const aiAnalyses: PanelAIAnalysis[] = [];
+  let redirectUrl: string | null = null;
 
   for (const message of messages) {
     if (message.role !== "assistant") continue;
@@ -44,89 +72,127 @@ function extractToolData(messages: UIMessage[]) {
       if (!isToolUIPart(part)) continue;
 
       const name = getToolName(part);
-      const state = "state" in part ? (part as { state: string }).state : "";
+      const p = part as Record<string, unknown>;
+      const state = (p.state as string) ?? "";
       if (state !== "output-available") continue;
 
-      const output = "output" in part ? (part as { output: unknown }).output : null;
-      if (!output || typeof output !== "object") continue;
+      const out = getToolOutput(part);
+      if (!out) continue;
 
-      const out = output as Record<string, unknown>;
+      // ── searchTools: register tools ────────────────────────────────
+      if (name === "searchTools" && Array.isArray(out.results)) {
+        for (const r of out.results as Record<string, unknown>[]) {
+          if (!r || typeof r !== "object") continue;
+          const id = String(r.id ?? "");
+          if (!id || toolMap.has(id)) continue;
+          toolMap.set(id, {
+            toolId: id,
+            name: String(r.name ?? id),
+            healthStatus: String(r.healthStatus ?? "unknown"),
+            estimatedResults: 0,
+            cost: 0,
+            keywords: [],
+            costPerKeyword: 0,
+          });
+        }
+      }
 
-      if (name === "searchTools" && "results" in out && Array.isArray(out.results)) {
-        for (const r of out.results) {
-          if (r && typeof r === "object" && "id" in r && "name" in r) {
-            const item = r as Record<string, unknown>;
-            const id = String(item.id);
-            if (!tools.some((t) => t.toolId === id)) {
-              tools.push({
-                toolId: id,
-                name: String(item.name),
-                healthStatus: String(item.healthStatus ?? "unknown"),
-                estimatedResults: 0,
-                cost: 0,
-                config: {},
-              });
-            }
+      // ── suggestKeywords: populate keywords + cost ───────────────────
+      if (name === "suggestKeywords" && Array.isArray(out.keywords)) {
+        const toolId = String(out.toolId ?? "");
+        const toolName = String(out.toolName ?? toolId);
+        if (!toolId) continue;
+
+        // Create tool if not yet seen (fallback for when searchTools
+        // returned the tool under a different query or wasn't called)
+        if (!toolMap.has(toolId)) {
+          toolMap.set(toolId, {
+            toolId,
+            name: toolName,
+            healthStatus: "unknown",
+            estimatedResults: 0,
+            cost: 0,
+            keywords: [],
+            costPerKeyword: 0,
+          });
+        }
+
+        const tool = toolMap.get(toolId)!;
+        tool.keywords = out.keywords as string[];
+        tool.costPerKeyword = Number(out.costPerKeyword ?? 0);
+        tool.cost = Number(out.totalEstimate ?? 0);
+        tool.estimatedResults =
+          tool.keywords.length * Number(out.resultsPerKeyword ?? 100);
+      }
+
+      // ── estimateCost: update tool cost ─────────────────────────────
+      if (name === "estimateCost" && "expected" in out) {
+        const input = getToolInput(part);
+        const toolId = input ? String(input.toolId ?? "") : "";
+        if (toolId && toolMap.has(toolId)) {
+          const tool = toolMap.get(toolId)!;
+          tool.cost = Number(out.expected ?? 0);
+          tool.estimatedResults = input
+            ? Number(input.resultCount ?? tool.estimatedResults)
+            : tool.estimatedResults;
+        }
+      }
+
+      // ── updateProjectConfig: update cost from mapper ───────────────
+      if (name === "updateProjectConfig" && out.ok === true) {
+        const input = getToolInput(part);
+        const toolId = input ? String(input.toolId ?? "") : "";
+        if (toolId && toolMap.has(toolId)) {
+          const tool = toolMap.get(toolId)!;
+          if (out.effectiveResultCount) {
+            tool.estimatedResults = Number(out.effectiveResultCount);
+          }
+          const estimate = out.estimate as Record<string, unknown> | undefined;
+          if (estimate?.expected) {
+            tool.cost = Number(estimate.expected);
           }
         }
       }
 
-      if (name === "suggestKeywords" && "keywords" in out) {
-        const kwToolId = String(out.toolId ?? "");
-        const kwList = Array.isArray(out.keywords) ? out.keywords : [];
-        const cpk = Number(out.costPerKeyword ?? 0);
-        if (kwToolId) {
-          keywords[kwToolId] = { count: kwList.length, costPerKeyword: cpk };
-          costs[kwToolId] = {
-            cost: Number(out.totalEstimate ?? 0),
-            resultCount: kwList.length * Number(out.resultsPerKeyword ?? 100),
-          };
+      // ── addToolToProject: register tool ────────────────────────────
+      if (name === "addToolToProject" && out.toolId) {
+        const id = String(out.toolId);
+        if (!toolMap.has(id)) {
+          toolMap.set(id, {
+            toolId: id,
+            name: String(out.name ?? id),
+            healthStatus: String(out.healthStatus ?? "unknown"),
+            estimatedResults: 0,
+            cost: 0,
+            keywords: [],
+            costPerKeyword: 0,
+          });
         }
       }
 
-      if (name === "estimateCost" && "expected" in out) {
-        const input = "input" in part ? (part as { input: unknown }).input as Record<string, unknown> : null;
-        const toolId = input ? String(input.toolId ?? "") : "";
-        const resultCount = input ? Number(input.resultCount ?? 0) : 0;
-        if (toolId) {
-          costs[toolId] = { cost: Number(out.expected ?? 0), resultCount };
+      // ── suggestAIAnalysis: collect AI analyses ─────────────────────
+      if (name === "suggestAIAnalysis" && Array.isArray(out.suggestions)) {
+        // Replace, don't append (chatbot may re-suggest)
+        aiAnalyses.length = 0;
+        for (const s of out.suggestions as Record<string, unknown>[]) {
+          aiAnalyses.push({
+            type: String(s.type ?? ""),
+            description: String(s.description ?? ""),
+          });
         }
       }
 
-      // Extract config from updateProjectConfig
-      if (name === "updateProjectConfig" && "ok" in out && out.ok === true) {
-        const input = "input" in part ? (part as { input: unknown }).input as Record<string, unknown> : null;
-        const toolId = input ? String(input.toolId ?? "") : "";
-        const config = input?.config as Record<string, unknown> | undefined;
-        if (toolId && config) {
-          configs[toolId] = config;
-        }
-        if (toolId && out.effectiveResultCount) {
-          const estimate = out.estimate as Record<string, unknown> | undefined;
-          costs[toolId] = {
-            cost: Number(estimate?.expected ?? 0),
-            resultCount: Number(out.effectiveResultCount),
-          };
-        }
+      // ── executeResearch: capture redirect URL ──────────────────────
+      if (name === "executeResearch" && out.success === true && out.url) {
+        redirectUrl = String(out.url);
       }
     }
   }
 
-  // Apply costs and configs to tools
-  for (const tool of tools) {
-    const c = costs[tool.toolId];
-    if (c) {
-      tool.cost = c.cost;
-      tool.estimatedResults = c.resultCount;
-    }
-    if (configs[tool.toolId]) {
-      tool.config = configs[tool.toolId];
-    }
-  }
+  const tools = Array.from(toolMap.values());
+  const totalCost = tools.reduce((sum, t) => sum + t.cost, 0);
 
-  const totalCost = Object.values(costs).reduce((sum, c) => sum + c.cost, 0);
-
-  return { tools, totalCost, keywords };
+  return { tools, totalCost, aiAnalyses, redirectUrl };
 }
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -138,32 +204,25 @@ export function ChatInterface({
   projectStatus,
 }: ChatInterfaceProps) {
   const t = useTranslations("chat");
-  const [selectedTools, setSelectedTools] = useState<ConfiguredTool[]>([]);
+  const router = useRouter();
+  const [panelTools, setPanelTools] = useState<PanelTool[]>([]);
   const [totalCost, setTotalCost] = useState(0);
-  const [keywordCosts, setKeywordCosts] = useState<Record<string, { count: number; costPerKeyword: number }>>({});
+  const [aiAnalyses, setAiAnalyses] = useState<PanelAIAnalysis[]>([]);
+  const [redirected, setRedirected] = useState(false);
 
-  const handleKeywordSelectionChange = useCallback((toolId: string, selected: string[]) => {
-    setKeywordCosts((prev) => {
-      const entry = prev[toolId];
-      const costPerKeyword = entry?.costPerKeyword ?? 0;
-      const updated = { ...prev, [toolId]: { count: selected.length, costPerKeyword } };
-
-      let newTotal = 0;
-      for (const [, v] of Object.entries(updated)) {
-        newTotal += v.count * v.costPerKeyword;
-      }
-      setTotalCost(newTotal);
-
-      return updated;
-    });
-  }, []);
-
-  const handleConfigChange = useCallback(
-    (toolId: string, config: Record<string, unknown>) => {
-      setSelectedTools((prev) =>
-        prev.map((tool) =>
-          tool.toolId === toolId ? { ...tool, config } : tool
-        )
+  const handleKeywordSelectionChange = useCallback(
+    (toolId: string, selected: string[]) => {
+      setPanelTools((prev) =>
+        prev.map((tool) => {
+          if (tool.toolId !== toolId) return tool;
+          const newCost = selected.length * tool.costPerKeyword;
+          return {
+            ...tool,
+            keywords: selected,
+            cost: newCost,
+            estimatedResults: selected.length * 100,
+          };
+        })
       );
     },
     []
@@ -177,13 +236,30 @@ export function ChatInterface({
     messages: initialMessages,
   });
 
-  // Scan all messages for tool data whenever messages change
+  // Scan all messages for structured data whenever messages change
   useEffect(() => {
-    const { tools, totalCost: tc, keywords } = extractToolData(messages);
-    if (tools.length > 0) setSelectedTools(tools);
-    if (tc > 0) setTotalCost(tc);
-    if (Object.keys(keywords).length > 0) setKeywordCosts(keywords);
-  }, [messages]);
+    const data = extractPanelData(messages);
+
+    if (data.tools.length > 0) {
+      setPanelTools(data.tools);
+      setTotalCost(data.totalCost);
+    }
+    if (data.aiAnalyses.length > 0) {
+      setAiAnalyses(data.aiAnalyses);
+    }
+
+    // Handle checkout redirect
+    if (data.redirectUrl && !redirected) {
+      setRedirected(true);
+      router.push(data.redirectUrl);
+    }
+  }, [messages, redirected, router]);
+
+  // Recalculate total cost when panel tools change
+  useEffect(() => {
+    const total = panelTools.reduce((sum, t) => sum + t.cost, 0);
+    setTotalCost(total);
+  }, [panelTools]);
 
   const isDisabled =
     status === "streaming" ||
@@ -197,19 +273,23 @@ export function ChatInterface({
   return (
     <div className="flex h-full min-h-0 flex-col lg:flex-row lg:gap-4 p-4">
       <div className="flex flex-1 flex-col min-h-0 rounded-xl border bg-card overflow-hidden">
-        <MessageList messages={messages} onKeywordSelectionChange={handleKeywordSelectionChange} />
+        <MessageList
+          messages={messages}
+          onKeywordSelectionChange={handleKeywordSelectionChange}
+        />
         <ChatInput onSend={handleSend} disabled={isDisabled} />
       </div>
 
-      <div className="w-full shrink-0 lg:w-72 lg:overflow-y-auto mt-4 lg:mt-0">
+      <div className="w-full shrink-0 lg:w-80 lg:overflow-y-auto mt-4 lg:mt-0">
         <ResearchConfigPanel
           projectId={projectId}
           locale={locale}
-          tools={selectedTools}
-          onConfigChange={handleConfigChange}
+          tools={panelTools}
+          aiAnalyses={aiAnalyses}
           totalCost={totalCost}
-          onStartResearch={() => {
-            sendMessage({ text: t("confirmStart") });
+          onKeywordChange={handleKeywordSelectionChange}
+          onGoToCheckout={() => {
+            router.push(`/${locale}/projects/${projectId}/checkout`);
           }}
           disabled={isDisabled}
         />
