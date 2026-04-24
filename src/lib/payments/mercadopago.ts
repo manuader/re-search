@@ -1,8 +1,11 @@
 import { MercadoPagoConfig, Preference } from "mercadopago";
 
 const client = new MercadoPagoConfig({
-  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN!,
+  accessToken: (process.env.MERCADOPAGO_ACCESS_TOKEN ?? "").trim(),
 });
+
+// USD → ARS conversion rate for MercadoPago (Argentine accounts require ARS)
+const USD_TO_ARS = 1400;
 
 interface CreatePreferenceParams {
   userId: string;
@@ -85,8 +88,8 @@ export async function createOrderPreference({
           title: ORDER_TITLES[locale] ?? "ResearchBot Research",
           description: projectTitle,
           quantity: 1,
-          unit_price: priceUsd,
-          currency_id: "USD",
+          unit_price: Math.round(priceUsd * USD_TO_ARS),
+          currency_id: "ARS",
         },
       ],
       back_urls: {
