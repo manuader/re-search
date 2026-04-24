@@ -175,15 +175,17 @@ export async function POST(req: Request) {
     paymentUrl = mpResult.init_point!;
     preferenceId = mpResult.id!;
   } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+
     // Clean up the order if MP preference creation fails
     await admin
       .from("research_orders")
-      .update({ status: "expired", failure_reason: "MP preference creation failed" })
+      .update({ status: "expired", failure_reason: `MP preference failed: ${errMsg}` })
       .eq("id", order.id);
 
-    console.error("[POST /api/orders] MP preference error:", err);
+    console.error("[POST /api/orders] MP preference error:", errMsg, err);
     return NextResponse.json(
-      { error: "Failed to create payment" },
+      { error: `Failed to create payment: ${errMsg}` },
       { status: 500 }
     );
   }

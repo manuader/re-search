@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import type { Locale } from "@/types";
-import type { PanelTool, PanelAIAnalysis } from "./chat-interface";
+import type { PanelTool, PanelAIAnalysis, PriceEstimate } from "./chat-interface";
 import { getToolSchema } from "@/lib/apify/schemas";
 import { getChatbotParams } from "@/lib/apify/tool-schema";
 import { ParamInput } from "./param-inputs";
@@ -27,7 +27,7 @@ interface ResearchConfigPanelProps {
   locale: Locale;
   tools: PanelTool[];
   aiAnalyses: PanelAIAnalysis[];
-  totalPrice: number;
+  priceEstimate: PriceEstimate;
   onKeywordChange: (toolId: string, keywords: string[]) => void;
   onConfigChange: (toolId: string, config: Record<string, unknown>) => void;
   onGoToCheckout: () => void;
@@ -63,7 +63,7 @@ export function ResearchConfigPanel({
   locale,
   tools,
   aiAnalyses,
-  totalPrice,
+  priceEstimate,
   onKeywordChange,
   onConfigChange,
   onGoToCheckout,
@@ -126,13 +126,14 @@ export function ResearchConfigPanel({
         </Card>
       )}
 
-      {/* Price + checkout */}
+      {/* Price breakdown + checkout */}
       <Card>
-        <CardContent className="pb-0 pt-4">
+        <CardContent className="pb-0 pt-4 space-y-1">
+          {/* Scraping costs per tool */}
           {tools.map((tool) => (
             <div
               key={tool.toolId}
-              className="flex items-center justify-between text-xs mb-1.5"
+              className="flex items-center justify-between text-xs"
             >
               <span className="text-muted-foreground truncate max-w-[60%]">
                 {tool.name}
@@ -142,20 +143,56 @@ export function ResearchConfigPanel({
               </span>
             </div>
           ))}
+
+          {/* AI analysis cost */}
+          {priceEstimate.aiCost > 0 && (
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">
+                {locale === "es" ? "Analisis IA" : "AI Analysis"}
+              </span>
+              <span className="font-medium">${priceEstimate.aiCost.toFixed(2)}</span>
+            </div>
+          )}
+
+          {/* Chatbot fee */}
+          {priceEstimate.chatbotFee > 0 && (
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">
+                {locale === "es" ? "Planificacion" : "Planning"}
+              </span>
+              <span className="font-medium">${priceEstimate.chatbotFee.toFixed(2)}</span>
+            </div>
+          )}
+
+          {/* Buffer */}
+          {priceEstimate.buffer > 0 && (
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">
+                {locale === "es" ? "Margen de seguridad" : "Safety buffer"}
+              </span>
+              <span className="font-medium">${priceEstimate.buffer.toFixed(2)}</span>
+            </div>
+          )}
+
+          {/* Markup */}
+          {priceEstimate.markup > 0 && (
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">
+                {locale === "es" ? "Tarifa de servicio" : "Service fee"}
+              </span>
+              <span className="font-medium">${priceEstimate.markup.toFixed(2)}</span>
+            </div>
+          )}
         </CardContent>
+
         <CardFooter className="flex flex-col gap-3 pt-3 border-t">
           <div className="flex w-full items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-sm font-medium">{t("estimatedTotal")}</span>
-              <span className="text-[10px] text-muted-foreground">
-                {locale === "es" ? "(precio estimado)" : "(estimated price)"}
-              </span>
-            </div>
+            <span className="text-sm font-medium">{t("estimatedTotal")}</span>
             <span className="text-lg font-bold">
-              {totalPrice > 0 ? `~$${totalPrice.toFixed(2)}` : "—"}
+              {priceEstimate.total > 0 ? `~$${priceEstimate.total.toFixed(2)}` : "—"}
             </span>
           </div>
-          {totalPrice > 0 && (
+          {priceEstimate.total > 0 && (
             <Button
               className="w-full"
               size="lg"

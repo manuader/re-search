@@ -94,12 +94,12 @@ export function CheckoutClient({
         body: JSON.stringify({ projectId, reportType }),
       });
 
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
         throw new Error(data?.error ?? "Failed to create order");
       }
 
-      const { paymentUrl } = await res.json();
+      const { paymentUrl } = data;
       window.location.href = paymentUrl;
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred");

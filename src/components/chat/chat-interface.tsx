@@ -66,16 +66,24 @@ function getToolInput(part: unknown): Record<string, unknown> | null {
   return null;
 }
 
-// ─── Estimate total price (mirrors quotePricing logic) ──────────────────────
-// Client-side approximation that includes AI costs, chatbot fee, buffer, and
-// markup so the panel estimate is close to what checkout will show.
+// ─── Price estimate breakdown ────────────────────────────────────────────────
+// Client-side approximation that mirrors quotePricing so the panel shows a
+// breakdown that matches what checkout will calculate.
 
-function estimateTotalPrice(
+export interface PriceEstimate {
+  scrapingCost: number;
+  aiCost: number;
+  chatbotFee: number;
+  buffer: number;
+  markup: number;
+  total: number;
+}
+
+function estimatePrice(
   scrapingCost: number,
   aiAnalyses: PanelAIAnalysis[],
   totalEstimatedItems: number
-): number {
-  // AI analysis cost
+): PriceEstimate {
   let aiCost = 0;
   for (const a of aiAnalyses) {
     const spec =
@@ -89,10 +97,10 @@ function estimateTotalPrice(
     }
   }
 
-  const internalCost = scrapingCost + aiCost + CHATBOT_FLAT_FEE_USD;
+  const chatbotFee = CHATBOT_FLAT_FEE_USD;
+  const internalCost = scrapingCost + aiCost + chatbotFee;
   const buffer = Math.max(MIN_SAFETY_BUFFER_USD, internalCost * SAFETY_BUFFER_PERCENT);
 
-  // Tiered markup
   let multiplier = MARKUP_TIERS[MARKUP_TIERS.length - 1].multiplier;
   for (const tier of MARKUP_TIERS) {
     if (internalCost < tier.maxCost) {
@@ -102,8 +110,10 @@ function estimateTotalPrice(
   }
 
   const rawPrice = (internalCost + buffer) * multiplier;
-  const rounded = Math.ceil(rawPrice * 100) / 100;
-  return Math.max(rounded, MIN_PRICE_USD);
+  const markup = rawPrice - (internalCost + buffer);
+  const total = Math.max(Math.ceil(rawPrice * 100) / 100, MIN_PRICE_USD);
+
+  return { scrapingCost, aiCost, chatbotFee, buffer, markup, total };
 }
 
 // ─── Extract structured data from messages ──────────────────────────────────
@@ -228,14 +238,14 @@ function extractPanelData(messages: UIMessage[]) {
 
   const tools = Array.from(toolMap.values());
 
-  // Calculate total estimated price including AI analysis, buffer, markup
+  // Calculate full price estimate with breakdown
   const scrapingCost = tools.reduce((sum, t) => sum + t.cost, 0);
   const totalItems = tools.reduce((sum, t) => sum + t.estimatedResults, 0);
-  const totalPrice = scrapingCost > 0
-    ? estimateTotalPrice(scrapingCost, aiAnalyses, totalItems)
-    : 0;
+  const priceEstimate = scrapingCost > 0
+    ? estimatePrice(scrapingCost, aiAnalyses, totalItems)
+    : { scrapingCost: 0, aiCost: 0, chatbotFee: 0, buffer: 0, markup: 0, total: 0 };
 
-  return { tools, totalPrice, aiAnalyses, redirectUrl };
+  return { tools, priceEstimate, aiAnalyses, redirectUrl };
 }
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -249,7 +259,9 @@ export function ChatInterface({
   const t = useTranslations("chat");
   const router = useRouter();
   const [panelTools, setPanelTools] = useState<PanelTool[]>([]);
-  const [totalPrice, setTotalPrice] = useState(0);
+  const [priceEstimate, setPriceEstimate] = useState<PriceEstimate>({
+    scrapingCost: 0, aiCost: 0, chatbotFee: 0, buffer: 0, markup: 0, total: 0,
+  });
   const [aiAnalyses, setAiAnalyses] = useState<PanelAIAnalysis[]>([]);
   const [redirected, setRedirected] = useState(false);
 
@@ -295,7 +307,7 @@ export function ChatInterface({
 
     if (data.tools.length > 0) {
       setPanelTools(data.tools);
-      setTotalPrice(data.totalPrice);
+      setPriceEstimate(data.priceEstimate);
     }
     if (data.aiAnalyses.length > 0) {
       setAiAnalyses(data.aiAnalyses);
@@ -313,9 +325,9 @@ export function ChatInterface({
     const scrapingCost = panelTools.reduce((sum, t) => sum + t.cost, 0);
     const totalItems = panelTools.reduce((sum, t) => sum + t.estimatedResults, 0);
     if (scrapingCost > 0) {
-      setTotalPrice(estimateTotalPrice(scrapingCost, aiAnalyses, totalItems));
+      setPriceEstimate(estimatePrice(scrapingCost, aiAnalyses, totalItems));
     } else {
-      setTotalPrice(0);
+      setPriceEstimate({ scrapingCost: 0, aiCost: 0, chatbotFee: 0, buffer: 0, markup: 0, total: 0 });
     }
   }, [panelTools, aiAnalyses]);
 
@@ -343,7 +355,7 @@ export function ChatInterface({
           locale={locale}
           tools={panelTools}
           aiAnalyses={aiAnalyses}
-          totalPrice={totalPrice}
+          priceEstimate={priceEstimate}
           onKeywordChange={handleKeywordChange}
           onConfigChange={handleConfigChange}
           onGoToCheckout={() => {
